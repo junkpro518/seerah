@@ -1,17 +1,17 @@
 # Contract — آلة حالات المراجعة (Review State Machine) — نموذج مدرك للطبقة
 
-> **معتمد (س٥، 2026-06-19):** طبقتان مستقلتان، كلٌّ سلسلتها الخاصة (لا تكرار خط الأنابيب). يُفرض بـ trigger للجميع (حتى المدير/postgres) + RLS بالدور. أي انتقال خارج جدول طبقته يُرفض بـ exception.
+> **معتمد نهائيًا (س٥ + تنقيح المالك، 2026-06-19):** طبقتان. **الهيكل** يأخذ السلسلة الكاملة (شرعي ثم تحريري ثم نشر). **الترجمة** تحريرية فقط (حكم الحقيقة محايد لغويًا — لا إعادة مراجعة شرعية)، مع استثناء بلا مسار جديد. يُفرض بـ trigger للجميع (حتى المدير/postgres) + RLS بالدور والطبقة.
 
 ## الطبقتان
 
-- **الهيكل (structure)** = الحقيقة (event/person/location/claim): المراجعة **الشرعية** (sourcing/grade).
-- **الترجمة (translation)** = نص كل لغة (`*_translations`): المراجعة **التحريرية** (الصياغة).
+- **الهيكل (structure)** = الحقيقة (event/person/location/claim): مراجعة **شرعية ثم تحريرية ثم نشر**.
+- **الترجمة (translation)** = نص كل لغة (`*_translations`): مراجعة **تحريرية ثم نشر** فقط.
 
 ## جدول الانتقالات المدرك للطبقة (`review_transitions`)
 
-`review_transitions(layer text, from_code text, to_code text, role_code text, PK(layer, from_code, to_code))` — كله بـ `code` (FK لـ review_states/roles).
+`review_transitions(layer, from_code, to_code, role_code, PK(layer, from_code, to_code))` — كله بـ `code` (FK لـ review_states/roles).
 
-### طبقة الهيكل (شرعي)
+### طبقة الهيكل (شرعي → تحريري → نشر)
 
 | from_code | to_code | الدور |
 |-----------|---------|-------|
@@ -19,49 +19,57 @@
 | `submitted` | `shariah_approved` | shariah_reviewer |
 | `submitted` | `needs_revision` | shariah_reviewer |
 | `submitted` | `rejected` | shariah_reviewer |
+| `shariah_approved` | `approved` | editor |
+| `shariah_approved` | `needs_revision` | editor |
+| `shariah_approved` | `rejected` | editor |
+| `approved` | `published` | admin |
+| `approved` | `needs_revision` | admin |
+| `published` | `approved` | admin (سحب نشر) |
 | `needs_revision` | `submitted` | author |
 
-> الهيكل ينتهي عند `shariah_approved` (الحقيقة موثّقة شرعيًا). لا `published` على الهيكل.
+### طبقة الترجمة (تحريري → نشر فقط — بلا مراجعة شرعية)
 
-### طبقة الترجمة (تحريري)
-
-| from_code | to_code | الدور | شرط إضافي |
-|-----------|---------|-------|-----------|
+| from_code | to_code | الدور | شرط/ملاحظة |
+|-----------|---------|-------|------------|
 | `draft` | `submitted` | author | — |
-| `submitted` | `approved` | editor | الهيكل الأب = `shariah_approved` |
-| `submitted` | `needs_revision` | editor | — |
+| `submitted` | `approved` | editor | — |
+| `submitted` | `needs_revision` | editor | **الاستثناء:** هنا يُرجِع المحرّر ترجمةً فيها تأدية نصّ مقدّس/معنى حسّاس لمراجعة شرعية — **بإعادة استخدام `needs_revision`، بلا حالة/مسار جديد** |
 | `submitted` | `rejected` | editor | — |
-| `approved` | `published` | admin | الهيكل الأب = `shariah_approved` |
+| `approved` | `published` | admin | **شرط:** الهيكل الأب = `published` |
+| `approved` | `needs_revision` | admin | — |
 | `published` | `approved` | admin | سحب نشر |
-| `needs_revision` | `submitted` | author | — |
+| `needs_revision` | `submitted` | author | بعد التعديل/المراجعة الشرعية إن طُلبت |
 
-## قاعدة الظهور (Visibility)
+> **لا مراجعة شرعية في مسار الترجمة** (الحكم محايد لغويًا)؛ الاستثناء النادر يُدار عبر `needs_revision` القائم.
 
-**ظاهر بلغة L** ⇔ `structure.review_status = 'shariah_approved'` **AND** `translation[L].review_status = 'published'`.
-- غير ذلك → رجوع للعربية مع إشارة عدم توفّر الترجمة (منطق عرض، م٦؛ البيانات جاهزة الآن).
+## قاعدة الظهور (Visibility) — لبنة ٣٤
+
+**ظاهر بلغة L** ⇔ `structure.review_status = 'published'` **AND** `translation[L].review_status = 'published'`.
+- غير ذلك → رجوع للعربية (إن كانت ظاهرة) مع إشارة عدم توفّر الترجمة؛ وإلا لا يُعرض.
 - anon يقرأ ما هو "ظاهر" فقط.
 
 ## قواعد الفرض (ملزمة)
 
-1. **منع القفز للجميع:** أي `(layer, from, to)` غير موجود يُرفض — **حتى للمدير ودور postgres** (مثل `draft→published` على الترجمة، أو أي `published` على الهيكل).
+1. **منع القفز للجميع:** أي `(layer, from, to)` غير موجود يُرفض — **حتى للمدير ودور postgres** (مثل `draft→published`، أو `shariah_approved` على الترجمة).
 2. **الفرض بالدور:** التحوّل يصنعه **الدور المخوّل** في صف الجدول فقط (تُقارن OLD.code→NEW.code فعليًا بدور المستخدم). **لا `can_make_transition(x,x)` (لا-عملية)، ولا تجاوز بمجرد `auth.uid() IS NOT NULL`.**
-3. **الشرط بين الطبقتين:** ترجمة لا تبلغ `approved`/`published` إلا والهيكل الأب `shariah_approved` (يُفحص في trigger الترجمة).
+3. **الشرط بين الطبقتين:** ترجمة لا تبلغ `published` إلا والهيكل الأب `published` (يُفحص في trigger الترجمة) — يضمن ثابت الظهور.
 4. **الطبقة من سياق الـ trigger:** trigger الهيكل يمرّر `layer='structure'`؛ trigger `*_translations` يمرّر `layer='translation'` (عبر TG_ARGV).
-5. **R2 (أمانة العرض):** المُراجِع الفعلي (actor) يُسجَّل في التدقيق عند `shariah_approved` (شرعي) و`approved`/`published` (تحريري)؛ لا شارة بلا مُراجِع مسجّل.
+5. **R2 (أمانة العرض):** المُراجِع الفعلي (actor) يُسجَّل في التدقيق عند `shariah_approved`/`approved`/`published`؛ لا شارة بلا مُراجِع مسجّل.
 
 ## سيناريوهات اختبار pgTAP (عقد قابل للتحقق)
 
 **الهيكل:**
-- `draft→shariah_approved` مباشرة → يُرفض (P0001) حتى لـ postgres.
-- `draft→submitted` بدور author يُقبل، بدور shariah_reviewer يُرفض.
-- `submitted→shariah_approved` بدور editor يُرفض، بدور shariah_reviewer يُقبل.
-- أي انتقال إلى `published` على الهيكل → يُرفض (غير موجود في طبقته).
+- `draft→published` مباشرة → يُرفض (P0001) حتى لـ postgres.
+- `draft→submitted` author يُقبل / shariah_reviewer يُرفض.
+- `submitted→shariah_approved` editor يُرفض / shariah_reviewer يُقبل.
+- `shariah_approved→approved` shariah_reviewer يُرفض / editor يُقبل.
+- `approved→published` editor يُرفض / admin يُقبل.
 
 **الترجمة:**
-- `submitted→approved` والهيكل الأب ليس `shariah_approved` → يُرفض (الشرط بين الطبقتين).
-- `submitted→approved` بدور author → يُرفض، بدور editor (والهيكل shariah_approved) → يُقبل.
-- `approved→published` بدور editor → يُرفض، بدور admin → يُقبل.
-- `draft→published` مباشرة → يُرفض.
+- أي انتقال إلى `shariah_approved` على الترجمة → يُرفض (غير موجود في طبقتها).
+- `submitted→approved` author يُرفض / editor يُقبل.
+- `approved→published` والهيكل الأب ليس `published` → يُرفض (الشرط بين الطبقتين)؛ والهيكل published + admin → يُقبل.
+- `submitted→needs_revision` editor يُقبل (مسار الاستثناء للمقدّس).
 
 **الظهور:**
-- الهيكل shariah_approved + ترجمة ar published → ar ظاهرة؛ ترجمة en draft → en غير ظاهرة (رجوع لـ ar).
+- الهيكل published + ترجمة ar published → ar ظاهرة؛ ترجمة en approved (غير published) → en غير ظاهرة (رجوع لـ ar مع إشارة).

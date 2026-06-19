@@ -34,19 +34,20 @@
 - **المبرّر:** مبدأ I + لبنة ٣/١١/٣٨. الفراغ يُعامل كغياب (btrim).
 - **ملاحظة:** الموضع الأدق (citations مقابل claims) يُحسم في data-model؛ المبدأ: لا حكم بلا جهة مسمّاة، مفروض في DB.
 
-## D6 — طبقتا المراجعة (s3) ✅ معتمد مدرك للطبقة (س٥، 2026-06-19)
+## D6 — طبقتا المراجعة (s3) ✅ معتمد نهائيًا (س٥ + تنقيح المالك، 2026-06-19)
 
-- **القرار:** طبقتان مستقلتان، كلٌّ سلسلتها (لا تكرار خط الأنابيب):
-  - الهيكل (event/person/location/claim) = المراجعة **الشرعية**: `draft → submitted → shariah_approved` (+needs_revision/rejected). author (submit) ثم shariah_reviewer.
-  - الترجمة (لكل لغة) = المراجعة **التحريرية**: `draft → submitted → approved → published` (+needs_revision/rejected)، **مشروط** ببلوغ الهيكل `shariah_approved`. author (submit) ثم editor (approved) ثم admin (published).
-- **الظهور(L):** `structure.review_status='shariah_approved' AND translation[L].review_status='published'`؛ وإلا رجوع للعربية مع إشارة.
-- **المبرّر:** يحقّق توجيه ٣ فعليًا (فصل الشرعي عن التحريري بلا تكرار) ويطابق أدوار لبنة ١٥. [العقد الكامل: contracts/state-machine.md]
+- **القرار:**
+  - الهيكل (event/person/location/claim) = السلسلة الكاملة **شرعي ثم تحريري ثم نشر**: `draft → submitted → shariah_approved → approved → published` (+needs_revision/rejected). author (submit) → shariah_reviewer (shariah_approved) → editor (approved) → admin (published).
+  - الترجمة (لكل لغة) = **تحريري ثم نشر فقط** (الحكم محايد لغويًا، لا إعادة مراجعة شرعية): `draft → submitted → approved → published` (+needs_revision/rejected). author (submit) → editor (approved) → admin (published)، و`published` **مشروط ببلوغ الهيكل published**.
+  - **الاستثناء (بلا مسار جديد):** ترجمة فيها تأدية نصّ مقدّس/معنى حسّاس → المحرّر يرجّعها لمراجعة شرعية عبر `needs_revision` القائم.
+- **الظهور(L):** `structure.review_status='published' AND translation[L].review_status='published'`؛ وإلا رجوع للعربية مع إشارة (لبنة ٣٤).
+- **المبرّر:** المراجعة الشرعية تقع مرة على الحقيقة (الهيكل)؛ الترجمة عمل تحريري لغوي. يطابق أدوار لبنة ١٥. [العقد الكامل: contracts/state-machine.md]
 
 ## D7 — آلة حالات المراجعة (للجميع، بالدور، بلا أخطاء الخطة القديمة)
 
 - **القرار:** `review_transitions(layer, from_code, to_code, role_code)` مدرك للطبقة (FK لـ review_states/roles؛ PK(layer,from,to)). دالة `enforce_review_transition()` (trigger BEFORE UPDATE، تتلقّى `layer` عبر TG_ARGV: 'structure' لكيانات الهيكل، 'translation' لـ `*_translations`): (أ) ترفض أي انتقال خارج جدول طبقته **للجميع بما فيهم المدير/postgres**؛ (ب) تتحقق أن **دور المستخدم الحالي** = `role_code` للانتقال (مقارنة OLD→NEW حقيقية)؛ (ج) **شرط بين الطبقتين:** ترجمة لا تبلغ approved/published إلا والهيكل الأب `shariah_approved`.
 - **تصحيح أخطاء الخطة القديمة:** لا `can_make_transition(x,x)` (لا-عملية)؛ التحقق بالدور يقارن OLD.code→NEW.code فعليًا. لا اعتماد على `auth.uid() IS NOT NULL` وحده كباب خلفي؛ غياب المستخدم (سياق خدمة) لا يتخطّى **جدول** الانتقالات (المنع البنيوي يبقى).
-- **الانتقالات (مدركة للطبقة):** الهيكل: draft→submitted (author) · submitted→{shariah_approved|needs_revision|rejected} (shariah_reviewer) · needs_revision→submitted (author). الترجمة: draft→submitted (author) · submitted→{approved|needs_revision|rejected} (editor، وapproved مشروط) · approved→published (admin، مشروط) · published→approved (admin) · needs_revision→submitted (author). [الجدول الكامل والشروط في contracts/state-machine.md]
+- **الانتقالات (مدركة للطبقة):** الهيكل (سلسلة كاملة): draft→submitted (author) · submitted→{shariah_approved|needs_revision|rejected} (shariah_reviewer) · shariah_approved→{approved|needs_revision|rejected} (editor) · approved→{published|needs_revision} (admin) · published→approved (admin) · needs_revision→submitted (author). الترجمة (تحريري فقط): draft→submitted (author) · submitted→{approved|needs_revision|rejected} (editor) · approved→published (admin، **مشروط بالهيكل published**) · published→approved (admin) · needs_revision→submitted (author). [الجدول الكامل والشروط في contracts/state-machine.md]
 
 ## D8 — الحذف الناعم + التفرّد الجزئي
 

@@ -285,8 +285,8 @@ review_transitions (                       -- مدرك للطبقة (D6/D7، س�
 )
 ```
 - الطبقتان وانتقالاتهما + الدور + الشرط بين الطبقتين + قاعدة الظهور: في [contracts/state-machine.md](./contracts/state-machine.md).
-- `enforce_review_transition()` trigger BEFORE UPDATE يتلقّى `layer` عبر TG_ARGV: `'structure'` على events/persons/locations/claims، و`'translation'` على `*_translations` — يفرض جدول الطبقة للجميع + الدور (مقارنة OLD→NEW) + شرط "الترجمة لا تبلغ approved/published إلا والهيكل الأب shariah_approved" (D7).
-- **الهيكل** ينتهي عند `shariah_approved` (شرعي)؛ **الترجمة** تنتهي عند `published` (تحريري). **الظهور(L)** = الهيكل shariah_approved AND ترجمة L published.
+- `enforce_review_transition()` trigger BEFORE UPDATE يتلقّى `layer` عبر TG_ARGV: `'structure'` على events/persons/locations/claims، و`'translation'` على `*_translations` — يفرض جدول الطبقة للجميع + الدور (مقارنة OLD→NEW) + شرط "الترجمة لا تبلغ `published` إلا والهيكل الأب `published`" (D7).
+- **الهيكل** يأخذ السلسلة الكاملة (شرعي→تحريري→نشر) وينتهي عند `published`؛ **الترجمة** تحريري→نشر فقط (لا مراجعة شرعية؛ استثناء المقدّس عبر `needs_revision`). **الظهور(L)** = الهيكل published AND ترجمة L published.
 
 ---
 
