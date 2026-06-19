@@ -6,7 +6,7 @@
 
 **أعمدة قياسية على كل جداول الكيانات/الترجمة/الربط/الملاحظات:**
 - `id uuid primary key default gen_random_uuid()` (عدا جداول الترجمة والمرجعية — انظر مفاتيحها).
-- `created_at timestamptz not null default now()` · `updated_at timestamptz not null default now()` (يُحدَّث بـ trigger).
+- `created_at timestamptz not null default now()` · `updated_at timestamptz not null default now()` — يُحدَّث بدالة مشتركة `set_updated_at()` (تُنشأ في 0003) تُربط كـ trigger BEFORE UPDATE بكل جدول له `updated_at`.
 - `created_by uuid references public.profiles(id)`.
 - `deleted_at timestamptz` (NULL = حيّ) — **حذف ناعم؛ لا DELETE فيزيائي في المسار العادي**.
 
@@ -61,7 +61,7 @@ profiles (
   created_at, updated_at, deleted_at
 )
 ```
-- دالة `public.current_role() returns text` (SECURITY DEFINER، تقرأ role_code لـ auth.uid()).
+- دالة `public.current_role_name() returns text` (SECURITY DEFINER، تقرأ role_code لـ auth.uid()). **ملاحظة: لا تُسمَّ `current_role` — كلمة محجوزة في Postgres.**
 - trigger `on_auth_user_created` يُنشئ profile تلقائيًا عند إضافة مستخدم.
 - **2FA:** لا عمود boolean؛ الفرض عبر RLS (`auth.jwt()->>'aal'='aal2'`) — D12.
 
@@ -247,11 +247,11 @@ audit_log (
   op text not null,            -- INSERT/UPDATE/DELETE/LOGIN/LOGOUT
   old_data jsonb, new_data jsonb,
   actor uuid,                  -- auth.uid()
-  actor_role text,             -- current_role() وقت الفعل
+  actor_role text,             -- current_role_name() وقت الفعل
   occurred_at timestamptz not null default now()
 )
 ```
-- دالة `audit_trigger()` **SECURITY DEFINER**: تستخدم `to_jsonb(OLD)`/`to_jsonb(NEW)`؛ AFTER INSERT/UPDATE/DELETE على **كل جداول المحتوى** (يشمل UPDATE للحذف الناعم → يُسجَّل DELETE منطقي).
+- دالة `audit_trigger()` **SECURITY DEFINER**: تستخدم `to_jsonb(OLD)`/`to_jsonb(NEW)`؛ AFTER INSERT/UPDATE/DELETE على **كل الجداول القابلة للتعديل** — يشمل صراحةً: events/persons/locations/`*_translations`/claims/claim_citations/event_persons/event_locations/content_notes/sources/citations **و`profiles` (تغيير الأدوار) و`sources.status` (اعتماد المصدر)** — لأن مبدأ IV = كل أفعال الإداريين، وتغيير الدور/اعتماد المصدر من أكثرها حساسية. (يشمل UPDATE للحذف الناعم → يُسجَّل كحذف منطقي.)
 - دخول/خروج الإداريين: عبر Supabase Auth Hook → INSERT صف `op='LOGIN'/'LOGOUT'` (R-b: إن تعذّر مبكرًا يُوثَّق لا يُدّعى).
 - **append-only:** RLS تمنع UPDATE/DELETE للجميع (بما فيه admin) وتمنع INSERT المباشر من المستخدم؛ الكتابة فقط عبر الدالة المالكة. SELECT مقصور على الأدوار المخوّلة.
 

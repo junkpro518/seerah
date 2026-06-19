@@ -55,6 +55,8 @@
 
 هذه البوابة تتجسّد بنيويًا في `tasks.md` (كل مهمة تنفيذ مسبوقة بمهمة اختبار ومرتبطة بها dependency)، ويتحقّق `speckit-analyze` لاحقًا من عدم وجود مهمة تنفيذ يتيمة بلا اختبار.
 
+**استراتيجية ثبات الاختبارات (مهم — `supabase test db` يعيد تشغيل كل الملفات على المخطط النهائي):** الاختبارات المبكرة يجب ألّا تَضبط حالات متقدّمة مباشرةً (مثل `review_status='published'`) لأن trigger آلة الحالات (0011) وRLS (0014) سيرفضانها لاحقًا فتنقلب خضراءُها حمراء عند T032. القاعدة: **التجهيز يبدأ من `draft` ويصل للحالات عبر انتقالات صحيحة بالدور، أو عبر مُعِين اختبار `SECURITY DEFINER`/service-role يتخطّى RLS وآلة الحالات بنيّة معلنة** (يُعرَّف في `00_helpers.sql`). كل ملف اختبار يلتزم هذا حتى يبقى أخضر بعد كل الترحيلات.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -78,7 +80,7 @@ supabase/
 ├── migrations/                 # مصدر الحقيقة — ملف لكل مسؤولية، مرقّمة
 │   ├── 0001_lookups.sql        # الجداول المرجعية + جداول تسمياتها + بذرة الأكواد
 │   ├── 0002_languages_seed.sql # قائمة اللغات المدعومة (ar أولًا)
-│   ├── 0003_profiles.sql       # المستخدمون والأدوار + دالة current_role + auto-profile
+│   ├── 0003_profiles.sql       # المستخدمون والأدوار + current_role_name() + auto-profile + set_updated_at()
 │   ├── 0004_sources_citations.sql  # المصادر (حالة اعتماد) + الاستشهادات + قيد grading_source
 │   ├── 0005_content_entities.sql   # events/persons/locations (هيكل) + timeline_order + deleted_at
 │   ├── 0006_translations.sql   # *_translations (entity_id, lang) + body jsonb + slug + review_status

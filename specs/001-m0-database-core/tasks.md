@@ -14,7 +14,7 @@
 
 - [ ] T001 تهيئة Git/Supabase وإنشاء `.gitignore` (يضيف: `supabase/.branches`, `supabase/.temp`, `.env*`, `.DS_Store`, `backups/`, `node_modules/`) — `supabase init` في جذر المشروع. (يعتمد: Docker يعمل.)
 - [ ] T002 تفعيل pgTAP: `supabase migration new enable_pgtap` ثم كتابة `create extension if not exists pgtap with schema extensions;` في `supabase/migrations/`؛ `supabase start` ثم `supabase db reset` (تحقّق: لا أخطاء). commit.
-- [ ] T003 [P] بنية اختبار: `supabase/tests/00_helpers.sql` — دوال انتحال دور/مستخدم + ضبط `request.jwt.claims` بما فيه `aal` (aal1/aal2) + `as_anon()`. (تخدم كل ملفات RLS/الحالات.)
+- [ ] T003 [P] بنية اختبار: `supabase/tests/00_helpers.sql` — دوال انتحال دور/مستخدم + ضبط `request.jwt.claims` بما فيه `aal` (aal1/aal2) + `as_anon()` + **مُعِين `seed_to_state()` (`SECURITY DEFINER`/service-role) يصل بصفٍّ لحالة متقدّمة عبر انتقالات صحيحة أو تخطٍّ معلن** — حتى تبقى الاختبارات المبكرة خضراء بعد ترحيلات آلة الحالات (0011) وRLS (0014). (راجع plan §استراتيجية ثبات الاختبارات.)
 
 **Checkpoint:** مكدّس محلي يعمل، pgTAP مفعّل، دوال الاختبار جاهزة.
 
@@ -28,8 +28,8 @@
 - [ ] T005 تنفيذ `supabase/migrations/0001_languages.sql` (جدول languages + بذرة ar) → أخضر → commit. **[blockedBy T004]** — (FR-005/007)
 - [ ] T006 [US4] توسيع `01_lookups.sql` (أحمر): وجود كل الجداول المرجعية + جداول `*_labels` + الأكواد المبذورة + تسميات `ar` (roles, review_states, doc_grades مع requires_grading_source، confidence_levels, claim_types, citation_relations, source_types, source_statuses, note_types). يفشل.
 - [ ] T007 تنفيذ `supabase/migrations/0002_lookups.sql` (الجداول المرجعية + labels + بذرة الأكواد والتسميات العربية؛ كل الإشارات بـ code) → أخضر → commit. **[blockedBy T006]** — (FR-003/041, SC غير مباشر)
-- [ ] T008 [US6] اختبار `supabase/tests/02_schema.sql` (أحمر): وجود `profiles` (role_code FK roles) + دالة `current_role()`. يفشل.
-- [ ] T009 [US6] تنفيذ `supabase/migrations/0003_profiles.sql` (profiles + current_role SECURITY DEFINER + trigger auto-profile على auth.users) → أخضر → commit. **[blockedBy T008]** — (FR-031)
+- [ ] T008 [US6] اختبار `supabase/tests/02_schema.sql` (أحمر): وجود `profiles` (role_code FK roles) + دالة `current_role_name()` + دالة/trigger `set_updated_at()`. يفشل.
+- [ ] T009 [US6] تنفيذ `supabase/migrations/0003_profiles.sql` (profiles + `current_role_name()` SECURITY DEFINER — **لا `current_role` المحجوزة** + trigger auto-profile على auth.users + دالة مشتركة `set_updated_at()` تُربط بكل جدول له updated_at) → أخضر → commit. **[blockedBy T008]** — (FR-031)
 
 **Checkpoint:** المرجعيات واللغات والأدوار جاهزة؛ يمكن بناء الكيانات.
 
@@ -82,8 +82,8 @@
 
 > **هدف القصة:** كل تغيير يُسجَّل، والسجل لا يُعبث به. **اختبار مستقل:** UPDATE/DELETE على audit_log يفشل حتى لـ admin.
 
-- [ ] T026 [US3] اختبار `supabase/tests/06_audit.sql` (أحمر): تعديل صف (ولو حرف تشكيل) يُنتج صف audit بقيمة قديمة/جديدة كاملة + actor + occurred_at؛ الحذف الناعم (UPDATE deleted_at) يُسجَّل؛ UPDATE وDELETE على audit_log يفشلان حتى بدور admin؛ INSERT مباشر من مستخدم يفشل. يفشل.
-- [ ] T027 [US3] تنفيذ `supabase/migrations/0012_audit.sql` (audit_log + `audit_trigger()` SECURITY DEFINER بـ to_jsonb(OLD/NEW) AFTER INSERT/UPDATE/DELETE على كل جداول المحتوى؛ RLS audit_log: لا UPDATE/DELETE/INSERT مباشر، SELECT للأدوار المخوّلة فقط) → أخضر → commit. **[blockedBy T026, T025]** — (FR-026..030, SC-002/003؛ مبدأ IV)
+- [ ] T026 [US3] اختبار `supabase/tests/06_audit.sql` (أحمر): تعديل صف (ولو حرف تشكيل) يُنتج صف audit بقيمة قديمة/جديدة كاملة + actor + occurred_at؛ **تغيير `profiles.role_code` واعتماد `sources.status_code` يُسجَّلان** (مبدأ IV)؛ الحذف الناعم (UPDATE deleted_at) يُسجَّل؛ UPDATE وDELETE على audit_log يفشلان حتى بدور admin؛ INSERT مباشر من مستخدم يفشل. يفشل.
+- [ ] T027 [US3] تنفيذ `supabase/migrations/0012_audit.sql` (audit_log + `audit_trigger()` SECURITY DEFINER بـ to_jsonb(OLD/NEW) AFTER INSERT/UPDATE/DELETE على **كل الجداول القابلة للتعديل بما فيها `profiles` (تغيير الأدوار) و`sources` (الاعتماد)** إضافةً لجداول المحتوى/الترجمة/الربط/الملاحظات؛ RLS audit_log: لا UPDATE/DELETE/INSERT مباشر، SELECT للأدوار المخوّلة فقط) → أخضر → commit. **[blockedBy T026, T025]** — (FR-026..030, SC-002/003؛ مبدأ IV)
 
 **Checkpoint:** تدقيق شامل غير قابل للعبث.
 

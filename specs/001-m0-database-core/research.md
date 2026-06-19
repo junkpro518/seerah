@@ -34,10 +34,15 @@
 - **المبرّر:** مبدأ I + لبنة ٣/١١/٣٨. الفراغ يُعامل كغياب (btrim).
 - **ملاحظة:** الموضع الأدق (citations مقابل claims) يُحسم في data-model؛ المبدأ: لا حكم بلا جهة مسمّاة، مفروض في DB.
 
-## D6 — طبقتا المراجعة (s3، أبسط نموذج)
+## D6 — طبقتا المراجعة (s3) ⚠️ مفتوح — بانتظار قرار المالك (س٥)
 
-- **القرار:** كيان الهيكل (event/person/location/claim) يحمل `review_status` = المراجعة **الشرعية** (sourcing/grade). كل ترجمة تحمل `review_status` = المراجعة **التحريرية** (الصياغة). قاعدة الظهور بلغة L: `structure.review_status='published' AND translation[L].review_status='published'`؛ وإلا رجوع للعربية مع إشارة. طبقتان فقط، لا ثالثة.
-- **المبرّر:** قرار s3 + توجيه المالك ٣ (أبقها بسيطة). يفصل المسؤوليتين دون إقحام مستويات.
+- **المشكلة المكتشفة:** الصياغة الأولى طبّقت سلسلة الخمس مراحل على الطبقتين معًا واشترطت بلوغ الاثنتين `published` — وهذا يشغّل خط الأنابيب **مرتين** ويخالف توجيه ٣ (طبقتان بسيطتان).
+- **البديل الموصى به (مدرك للطبقة):**
+  - الهيكل (event/person/location/claim) = المراجعة **الشرعية**: `draft → submitted → shariah_approved` (+needs_revision/rejected). يصنعها author (submit) ثم shariah_reviewer.
+  - الترجمة (لكل لغة) = المراجعة **التحريرية**: `draft → submitted → approved → published` (+needs_revision/rejected)، **مشروط** بأن الهيكل بلغ `shariah_approved`. يصنعها author (submit) ثم editor (approved) ثم admin (published).
+  - **الظهور(L):** `structure.review_status='shariah_approved' AND translation[L].review_status='published'`؛ وإلا رجوع للعربية مع إشارة.
+- **الأثر:** `review_transitions` يصبح مدرك الطبقة (عمود layer أو جدولان)؛ يُحدَّث D7 + contract + RLS بعد التأكيد. **لا يُنفَّذ 0011/0014 على النموذج المتناقض.**
+- **المبرّر:** يحقّق توجيه ٣ فعليًا (فصل الشرعي عن التحريري بلا تكرار) ويطابق أدوار لبنة ١٥.
 
 ## D7 — آلة حالات المراجعة (للجميع، بالدور، بلا أخطاء الخطة القديمة)
 
