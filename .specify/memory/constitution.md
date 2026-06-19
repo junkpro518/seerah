@@ -1,50 +1,170 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: (template) → 1.0.0
+Rationale: First ratification. Initial constitution derived from docs/CONCEPT.md (43 approved
+decisions), docs/GAPS.md, and docs/HANDOFF.md §2.
+
+Principles defined (8):
+  I.   ننقل فقط — لا نُصدِر حكمًا (Transmit, Never Rule)            [CONCEPT 3, 11]
+  II.  لكل معلومة مصدرها ودرجتها (Every Claim Sourced & Graded)     [CONCEPT 6, 10, 17]
+  III. بوابة المراجعة إلزامية للجميع (Mandatory Review Gate)        [CONCEPT 4, 15, 19; GAPS R2]
+  IV.  التدقيق الشامل (Total Audit Trail)                           [CONCEPT 25]
+  V.   متعدد اللغات من التصميم (Multilingual by Design)             [CONCEPT 29, 33, 34]
+  VI.  صون البيانات وسلامتها (Data Preservation & Integrity)        [CONCEPT 36, 43]
+  VII. المواصفات أولًا والاختبار أولًا (Spec-First & Test-First)     [CONCEPT 20; HANDOFF 4.5]
+  VIII.الأمان والأدوار (Security, Roles & 2FA)                       [CONCEPT 4, 41]
+
+Sections:
+  - القيود التقنية والقانونية (Technical & Legal Constraints)       [CONCEPT 13, 16, 28, 30, 38, 42; GAPS]
+  - سير التطوير وبوابات الجودة (Development Workflow & Quality Gates)[CONCEPT 20; HANDOFF 3-5]
+  - الحوكمة (Governance)
+
+Templates consistency check:
+  ✅ .specify/templates/plan-template.md      — Constitution Check gate references this file generically; compatible
+  ✅ .specify/templates/spec-template.md      — scope/requirements structure compatible; no mandatory section conflicts
+  ⚠ .specify/templates/tasks-template.md     — template defaults tests to OPTIONAL (line ~12);
+       OVERRIDDEN by Principle VII (NON-NEGOTIABLE): every M0 spec MUST request pgTAP tests, and
+       task lists MUST place failing-test tasks before implementation. Template left unmodified
+       (vendored/reusable); enforcement lives in the spec + Principle VII, not the template.
+  ✅ CLAUDE.md / AGENTS.md                     — spec-first + workflow rules align with Principles VII and Governance
+
+Deferred / TODO: none. (Project brand name intentionally unset — see Governance.)
+-->
+
+# دستور موسوعة السيرة النبوية الموثّقة
+
+> اسم العمل (working title). الاسم التجاري النهائي مؤجّل عمدًا ويُحفظ في إعداد واحد قابل للتغيير (انظر الحوكمة).
+> مصدر هذه المبادئ: `docs/CONCEPT.md` (٤٣ قرارًا معتمدًا) و`docs/GAPS.md`. عند أي تعارض، تلك الوثائق هي المرجع، ويُحدَّث الدستور منها.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. ننقل فقط — لا نُصدِر حكمًا (Transmit, Never Rule)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+المشروع يَنقل المعرفة ولا يُنشئ حكمًا من عنده.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- يجب ألّا يصدر عن المشروع حكمٌ على حديث أو رواية من تأليفنا — مطلقًا.
+- كل حكم يجب أن يُنسب إلى **جهة معتمدة مسمّاة** (مثل: الألباني، الأرناؤوط، الدرر السنية).
+- كل معلومة من نوع "حكم" يجب أن تحمل حقل **مصدر الحكم (`grading_source`) غير فارغ**؛ يمنع النظام حفظها بدونه (قيد قاعدة بيانات، لا اتفاق نوايا).
+- النصوص المقدّسة (آية/حديث) تُنقل حرفيًا من مصدرها المعتمد، لا من الذاكرة، ولا تُعدَّل.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**السبب:** المصداقية العلمية جوهر المشروع؛ أي حكم ذاتي يهدمها.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. لكل معلومة مصدرها ودرجتها (Every Claim Sourced & Graded)
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+المحتوى ليس نصًّا واحدًا، بل مجموعة **معلومات مفردة (claims)** موثّقة كلٌّ على حدة.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- كل معلومة مفردة يجب أن ترتبط باستشهاد واحد على الأقل (مصدر + موضع)؛ لا تُنشَر معلومة بلا مصدر.
+- كل معلومة تحمل **درجة توثيق** من السلّم المعتمد (لبنة ١١)؛ والتواريخ/الأماكن تحمل **درجة ثقة** منفصلة (لبنة ١٢).
+- **لا اعتماد على مصدر واحد:** ما ثبت بمصدر واحد فقط يُعلَّم (توثيق أضعف) ولا يُعرض كمؤكد؛ وعند اختلاف الأحكام يُعرض "مختلف فيه" بالقولين.
+- المصادر نفسها تمرّ ببوابة اعتماد قبل استخدامها (لبنة ١٧)، وتُدخَل قائمة المصادر **قبل** أي محتوى.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**السبب:** التوثيق على مستوى المعلومة المفردة هو ما يميّز الموسوعة عن السرد العام.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. بوابة المراجعة إلزامية للجميع (Mandatory Review Gate — No Exceptions)
+
+النشر ممنوع قبل المرور بالطبقات — **حتى المالك/المدير لا يتخطّاها**.
+
+- آلة حالات: مسودة → جاهز للمراجعة → مراجعة شرعية → اعتماد تحريري → منشور (+ حالتا: يحتاج تعديل، مرفوض).
+- التحوّلات المسموحة وصلاحيات كل دور تُفرَض عبر **RLS + triggers في قاعدة البيانات** (منطق فعلي، لا مجرد حقل أو اتفاق واجهة).
+- الزائر غير المسجّل (anon) يرى المحتوى **المنشور فقط**؛ يمنع RLS ما دونه.
+- **أمانة العرض (R2):** لا تُظهر الواجهة شارة "روجِع شرعيًا/تحريريًا" إلا بعد مراجعة فعلية من شخص مؤهّل يسجّله النظام. لا إيحاء بسلطة قبل وجودها.
+
+**السبب:** سلامة المحتوى الديني تتطلب منعًا تقنيًا للقفز، لا انضباطًا اختياريًا.
+
+### IV. التدقيق الشامل (Total Audit Trail)
+
+يُسجَّل كل شيء بلا استثناء.
+
+- كل تغيير على المحتوى يُسجَّل — **حتى تغيير تشكيل حرف واحد** (التشكيل يغيّر المعنى).
+- يُسجَّل: العملية، والقيمة القديمة والجديدة كاملةً (JSONB)، والمستخدم، والوقت، والجدول/الكيان.
+- تغييرات البيانات تُلتقط عبر **trigger تدقيق عام على كل الجداول**؛ ودخول/خروج الإداريين عبر خطّافات المصادقة.
+- سجل التدقيق **يُكتب فقط** (append-only) من منظور التطبيق؛ لا تعديل ولا حذف لقيوده.
+
+**السبب:** محتوى يدوي لا يُعوَّض + مسؤولية علمية = أثرٌ كامل قابل للتدقيق والرجوع.
+
+### V. متعدد اللغات من التصميم (Multilingual by Design)
+
+المنصة متعددة اللغات أصلًا، بطبقتين منفصلتين منذ م٠.
+
+- **طبقة الهيكل** (لا تتغيّر باللغة): الروابط الداخلية، التواريخ، الإحداثيات، درجات الثقة، إشارات المصادر، درجة المعلومة — تُسجَّل **مرة واحدة** وتُشارَك.
+- **طبقة النصوص** (لكل لغة): العنوان، الملخص، السرد، نص المعلومة، الـ slug، وحالة مراجعة مستقلة لكل ترجمة.
+- العربية هي **اللغة الأصل**؛ وبقية اللغات ترجمات رسمية تمرّ ببوابة المراجعة كالأصل.
+- الترجمة تظهر بلغتها **بعد نشرها فقط**؛ وإن غابت تُعرض العربية مع تنبيه صريح بعدم توفّر الترجمة بعد.
+
+**السبب:** إقحام تعدد اللغات لاحقًا يفرض إعادة هيكلة مكلفة؛ يُبنى من الأساس.
+
+### VI. صون البيانات وسلامتها (Data Preservation & Referential Integrity)
+
+البيانات تُصان ولا تُفقد، والروابط سليمة بنيويًا.
+
+- **حذف ناعم فقط** (`deleted_at`/علامة محذوف): لا حذف نهائي أبدًا؛ المحذوف يختفي من العرض ويبقى محفوظًا.
+- **سلامة مرجعية صريحة:** ربط المعلومة بحاويتها عبر أعمدة منفصلة (event/person/location) مع قيد "**واحد فقط مملوء**"، بدل مرجع متعدد الأشكال غامض.
+- **نسخة بحث:** عمود نص مجرّد (`body_plain`) يُشتق تلقائيًا من النص الغني عند الحفظ.
+- **نسخ احتياطي خارجي** دوري تلقائي خارج Supabase (NAS المالك) منذ البداية؛ المحتوى اليدوي لا يُعوَّض.
+
+**السبب:** نقطة فشل واحدة غير مقبولة لمحتوى لا يُمكن إعادة إنتاجه.
+
+### VII. المواصفات أولًا والاختبار أولًا (Spec-First & Test-First — NON-NEGOTIABLE)
+
+لا كود قبل مواصفة، ولا تنفيذ قبل اختبار فاشل.
+
+- سير Spec Kit إلزامي بالترتيب: `constitution → specify → clarify → plan → tasks → implement`. **لا كود بدون spec.**
+- **TDD بـ pgTAP:** تُكتب الاختبارات أولًا وتفشل (أحمر) → ثم التنفيذ حتى تنجح (أخضر). لا يُكتب كود تنفيذي قبل وجود اختباره.
+- الترحيلات (migrations) في Git هي **مصدر الحقيقة**، وتُطبَّق على Supabase السحابي عبر Supabase CLI.
+- لا `implement` قبل **موافقة المالك الصريحة** على الـ plan والـ tasks.
+
+**السبب:** الانضباط الاستباقي أرخص بكثير من تصحيح الأخطاء بأثر رجعي، خاصة في مخطط قاعدة بيانات حسّاس.
+
+### VIII. الأمان والأدوار (Security, Roles & 2FA)
+
+نظام متعدد المستخدمين والأدوار من البداية، بأقل صلاحية ممكنة.
+
+- الأدوار من م٠: **كاتب · مراجع شرعي · محرّر/معتمِد · مدير**؛ لا "فرد يلبس كل القبعات" كحلٍّ دائم.
+- **مصادقة ثنائية (2FA/TOTP) إلزامية** لكل صاحب صلاحية كتابة/مراجعة/إدارة.
+- مبدأ أقل صلاحية مفروض عبر RLS؛ كل دور يصل لما يخصّه فقط.
+- كل دخول/خروج إداري يُسجَّل في التدقيق (مبدأ IV) ويُنبَّه عليه (تيليجرام).
+
+**السبب:** حماية المحتوى غير المنشور وحسابات الصلاحية شرطٌ لمصداقية المنصة.
+
+## القيود التقنية والقانونية (Technical & Legal Constraints)
+
+**الستاك (لبنة ١٣):**
+- قاعدة البيانات + المصادقة + الصلاحيات (RLS) + التخزين: **Supabase سحابي مُدار** (Postgres) — قابل للترحيل لاحقًا لـ self-hosted.
+- الواجهة (م١+): **Next.js + Tailwind** بدعم RTL. الاستضافة (لاحقًا): **VPS Contabo** عبر Coolify/Dokploy.
+- البناء **مباشرة على Supabase السحابي** على **حساب ثانٍ** (غير الحساب الموصول بأدوات MCP)؛ الربط عبر Supabase CLI حصرًا.
+
+**الترخيص والاقتباس (لبنة ١٦، ٢٨، ٣٠):**
+- ترخيص محتوانا: **CC BY-NC-ND**؛ الترجمة للعموم تُمنع (اشتقاق) وتكون **بإذن المالك** فقط.
+- حدّ الاقتباس الحرفي من كتاب محمي: **سطران (≈٣٠–٤٠ كلمة)**، بين «...» ومميَّز، مع إحالة كاملة؛ يمنع تجميع اقتباسات لإعادة تركيب فقرة.
+- من التراث المحقَّق: يُقتبس **المتن** لا تعليقات/حواشي/مقدمة المحقّق.
+- الوسائط لا تُنشر إلا بحق استخدام واضح، وتُخزَّن مع ترخيصها ومصدرها.
+
+**مصادر النصوص المقدّسة (لبنة ٣٨):**
+- القرآن: نص **مجمع الملك فهد** (الرسم العثماني)، يُخزَّن بـ السورة:الآية. الحديث: المصدر الرقمي يُحدَّد لاحقًا، والقاعدة ثابتة (نقل حرفي + الكتاب/الرقم + مصدر الحكم).
+
+**أمانة العرض والحساسيات (لبنة ١٢، ٤٢):**
+- لا يُعرض تاريخ دقيق (يوم) لما هو تقريبي، ولا دبوس دقيق لموقع تقريبي/مختلف فيه.
+- عرض محايد موثّق بلا جدل مذهبي أو سياسي؛ خلافات الصحابة/الفتن بتحفّظ شديد وفق "مختلف فيه"؛ والأصل عند الحساسية العالية الإمساك بقرار المراجع الشرعي والمحرّر.
+
+## سير التطوير وبوابات الجودة (Development Workflow & Quality Gates)
+
+- **النطاق الحالي: م٠ فقط** (نواة قاعدة البيانات + الأدوار + بوابة المراجعة + التدقيق الشامل + content_notes + جداول تعدد اللغات). لا تُبنى مراحل لاحقة.
+- **سير التزامن:** محلي → GitHub → السيرفر؛ commit عند **كل خطوة/تعديل**. الترحيلات في Git = مصدر الحقيقة.
+- **أداة Spec Kit** تبقى على آخر تحديث (`specify self upgrade`)؛ يُتحقّق من تثبيتها قبل أي عمل.
+- **TDD بـ pgTAP:** اختبار فاشل أولًا ثم تنفيذ؛ يُطبَّق على Supabase الثاني عبر CLI (لا أدوات MCP للحساب الخطأ).
+- **بوابة الموافقة:** الدستور + spec + plan + tasks تُعرض على المالك، ولا `implement` قبل موافقته الصريحة.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- هذا الدستور **يعلو** على أي ممارسة أخرى في المشروع؛ وعند التعارض يُقدَّم.
+- **مصدر القرارات:** `docs/CONCEPT.md` و`docs/GAPS.md` هما المرجع المعتمد (محتوى Notion غير معتمد). يُشتق الدستور وكل المخرجات منهما، ولا يُعاد طرح ما حُسم.
+- **القرارات غير المغطّاة:** أي قرار غير مغطّى في الوثائق وله أثر على المنتج/المعمارية/البيانات/الأمان/التكلفة/تجربة المستخدم → **يُسأل المالك قبل المضي**. التفاصيل التنفيذية الصغيرة غير السلوكية تُوثَّق تحت قسم **Assumptions** في المواصفة.
+- **التعديلات:** تتطلب موافقة المالك + رفع الإصدار (semver) + تحديث القوالب التابعة + تقرير أثر التزامن (Sync Impact Report) أعلى هذا الملف.
+  - MAJOR: إزالة/إعادة تعريف مبدأ أو حوكمة بشكل غير متوافق رجعيًا.
+  - MINOR: إضافة مبدأ/قسم أو توسعة جوهرية للإرشاد.
+  - PATCH: توضيحات وصياغة دون تغيير دلالي.
+- **اسم المشروع** مؤجّل عمدًا: يُحفظ في إعداد واحد ولا يُزرع في الكود أو الروابط.
+- **الامتثال:** كل spec/plan/tasks ومراجعة كود يجب أن تتحقق من توافقها مع هذه المبادئ.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-06-18 | **Last Amended**: 2026-06-19
