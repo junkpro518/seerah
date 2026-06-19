@@ -18,7 +18,7 @@
 
 ## 1) الجداول المرجعية (Lookups) — code-keyed + تسميات مترجَمة
 
-نمط موحّد لكل قائمة `X`:
+**جدول القائمة** (نمط موحّد لكل قائمة `X`):
 ```
 public.X (
   code        text primary key,
@@ -26,13 +26,18 @@ public.X (
   sort_order  int not null default 0,
   is_active   boolean not null default true
 )
-public.X_labels (
-  code  text not null references public.X(code),
-  lang  text not null references public.languages(code),
-  label text not null,
-  primary key (code, lang)
+```
+**جدول تسميات موحّد** (قرار المالك — بدل ١٠ جداول `X_labels`، جدول واحد يقلّل تضخّم الجداول):
+```
+public.lookup_labels (
+  domain text not null,          -- اسم القائمة: 'roles' | 'review_states' | 'doc_grades' | ...
+  code   text not null,          -- كود الصف داخل تلك القائمة
+  lang   text not null references public.languages(code),
+  label  text not null,
+  primary key (domain, code, lang)
 )
 ```
+> سلامة `code` تُفرض حيث يُستخدَم (جداول المحتوى FK لكل قائمة)؛ `lookup_labels` بيانات عرض فقط (FK لـ lang فقط). يُختبر أن لكل (domain, code) تسمية `ar`.
 
 | الجدول | الأكواد (بذرة) | حقول خاصة |
 |--------|----------------|-----------|
@@ -47,7 +52,7 @@ public.X_labels (
 | `source_statuses` | `proposed` · `approved` · `rejected` | — |
 | `note_types` | `classification_reason` · `scholarly_dispute` · `editorial_note` · `reviewer_note` · `rejection_reason` | — |
 
-> التسميات العربية تُبذَر في `*_labels` بلغة `ar` (FR-003/041). قواعد العمل وآلة الحالات وRLS تشير إلى `code` لا `label`.
+> التسميات العربية تُبذَر في `lookup_labels` (domain, code, 'ar', label) (FR-003/041). قواعد العمل وآلة الحالات وRLS تشير إلى `code` لا `label`. (لون العرض على جدول القائمة نفسه.)
 
 ---
 
@@ -63,7 +68,7 @@ profiles (
 ```
 - دالة `public.current_role_name() returns text` (SECURITY DEFINER، تقرأ role_code لـ auth.uid()). **ملاحظة: لا تُسمَّ `current_role` — كلمة محجوزة في Postgres.**
 - trigger `on_auth_user_created` يُنشئ profile تلقائيًا عند إضافة مستخدم.
-- **2FA:** لا عمود boolean؛ الفرض عبر RLS (`auth.jwt()->>'aal'='aal2'`) — D12.
+- **2FA:** لا عمود boolean؛ الفرض عبر RLS (`auth.jwt()->>'aal'='aal2'`) — D12. **نقطة المالك ٢:** سياسات aal2 **لا تعطّل عمليات م٠** — الترحيلات والبذرة تعمل بدور المالك/`service_role` (يتجاوز RLS)، والاختبارات تحاكي `aal2` عبر `00_helpers`. التفعيل الكامل لتسجيل 2FA إلزامي في م١ **قبل أول دخول بشري حقيقي**.
 
 ---
 
@@ -195,6 +200,25 @@ claim_citations (
 
 **قيد "حكم⇐مصدر حكم" على المعلومة (FR-012, D5):** claim بـ `doc_grade_code` حيث `doc_grades.requires_grading_source = true` يجب أن يملك claim_citation→citation بـ `grading_source` غير فارغ. يُفرض بـ trigger + اختبار.
 
+### 6.1) نموذج ربط المعلومة بالنص (FR-040 — توثيق صريح، لبنة ٣٣، نقطة المالك ١)
+
+> **الضمان:** مخطط م٠ يدعم النموذج كاملًا الآن، بحيث يعمل محرّر م١ **بلا أي migration لاحق**.
+
+- **الحقيقة مشتركة:** `claims` (uuid) تحمل المصدر/الدرجة **مرة واحدة** (طبقة الهيكل)، وتُشارَك بين كل اللغات.
+- **النص لكل لغة:** نصّ المعلومة في `claim_translations(claim_id, lang, body jsonb, ...)`؛ وسرد الكيان الحاوي في `event/person/location_translations.body (jsonb)`.
+- **الإشارات داخل النص:** `body` (jsonb، نص غني) يُضمّن **عُقَد إشارة** تحمل `claim_id` المشترك، مثل:
+  ```json
+  { "type": "doc", "content": [
+    { "type": "paragraph", "content": [
+      { "type": "text", "text": "ثبت في الحديث الصحيح أن النبي ﷺ ..." },
+      { "type": "claim_ref", "attrs": { "claim_id": "<uuid>" } }
+    ] } ] }
+  ```
+  (الشكل الدقيق لعُقدة `claim_ref` يستقرّ مع محرّر TipTap/ProseMirror في م١؛ المهم أن `body` يستوعبها لأنه JSONB حرّ.)
+- **الترقيم `[n]` يُشتق وقت العرض لكل لغة** من ترتيب ظهور عُقَد `claim_ref` في `body` لتلك اللغة — **لا يُخزَّن** (لا عمود ترقيم). لغتان → ترقيمان مستقلّان لنفس `claim_id`.
+- **`body_plain`** (D9) يُشتق بتجريد النص من `body` (يتجاهل عُقَد الإشارة) للبحث.
+- **أثر م٠:** لا حاجة لجدول إشارات منفصل ولا لعمود ترقيم؛ إضافة عُقَد المحرّر في م١ = بيانات داخل `body` القائم، بلا تغيير مخطط.
+
 ---
 
 ## 7) جداول الربط
@@ -253,7 +277,7 @@ audit_log (
 ```
 - دالة `audit_trigger()` **SECURITY DEFINER**: تستخدم `to_jsonb(OLD)`/`to_jsonb(NEW)`؛ AFTER INSERT/UPDATE/DELETE على **كل الجداول القابلة للتعديل** — يشمل صراحةً: events/persons/locations/`*_translations`/claims/claim_citations/event_persons/event_locations/content_notes/sources/citations **و`profiles` (تغيير الأدوار) و`sources.status` (اعتماد المصدر)** — لأن مبدأ IV = كل أفعال الإداريين، وتغيير الدور/اعتماد المصدر من أكثرها حساسية. (يشمل UPDATE للحذف الناعم → يُسجَّل كحذف منطقي.)
 - دخول/خروج الإداريين: عبر Supabase Auth Hook → INSERT صف `op='LOGIN'/'LOGOUT'` (R-b: إن تعذّر مبكرًا يُوثَّق لا يُدّعى).
-- **append-only:** RLS تمنع UPDATE/DELETE للجميع (بما فيه admin) وتمنع INSERT المباشر من المستخدم؛ الكتابة فقط عبر الدالة المالكة. SELECT مقصور على الأدوار المخوّلة.
+- **append-only:** RLS تمنع UPDATE/DELETE للجميع (بما فيه admin) وتمنع INSERT المباشر من المستخدم؛ الكتابة فقط عبر الدالة المالكة. **SELECT للمدير (admin) فقط** — السجل حسّاس (يحوي القيم الكاملة) (قرار المالك، نقطة ٣).
 
 ---
 

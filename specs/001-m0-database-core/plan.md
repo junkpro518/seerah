@@ -78,8 +78,8 @@ specs/001-m0-database-core/
 supabase/
 ├── config.toml                 # يولّده supabase init
 ├── migrations/                 # مصدر الحقيقة — ملف لكل مسؤولية، مرقّمة
-│   ├── 0001_lookups.sql        # الجداول المرجعية + جداول تسمياتها + بذرة الأكواد
-│   ├── 0002_languages_seed.sql # قائمة اللغات المدعومة (ar أولًا)
+│   ├── 0001_languages.sql      # قائمة اللغات المدعومة (ar أولًا)
+│   ├── 0002_lookups.sql        # الجداول المرجعية + lookup_labels موحّد + بذرة الأكواد/التسميات
 │   ├── 0003_profiles.sql       # المستخدمون والأدوار + current_role_name() + auto-profile + set_updated_at()
 │   ├── 0004_sources_citations.sql  # المصادر (حالة اعتماد) + الاستشهادات + قيد grading_source
 │   ├── 0005_content_entities.sql   # events/persons/locations (هيكل) + timeline_order + deleted_at
