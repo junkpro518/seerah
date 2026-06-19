@@ -34,21 +34,19 @@
 - **المبرّر:** مبدأ I + لبنة ٣/١١/٣٨. الفراغ يُعامل كغياب (btrim).
 - **ملاحظة:** الموضع الأدق (citations مقابل claims) يُحسم في data-model؛ المبدأ: لا حكم بلا جهة مسمّاة، مفروض في DB.
 
-## D6 — طبقتا المراجعة (s3) ⚠️ مفتوح — بانتظار قرار المالك (س٥)
+## D6 — طبقتا المراجعة (s3) ✅ معتمد مدرك للطبقة (س٥، 2026-06-19)
 
-- **المشكلة المكتشفة:** الصياغة الأولى طبّقت سلسلة الخمس مراحل على الطبقتين معًا واشترطت بلوغ الاثنتين `published` — وهذا يشغّل خط الأنابيب **مرتين** ويخالف توجيه ٣ (طبقتان بسيطتان).
-- **البديل الموصى به (مدرك للطبقة):**
-  - الهيكل (event/person/location/claim) = المراجعة **الشرعية**: `draft → submitted → shariah_approved` (+needs_revision/rejected). يصنعها author (submit) ثم shariah_reviewer.
-  - الترجمة (لكل لغة) = المراجعة **التحريرية**: `draft → submitted → approved → published` (+needs_revision/rejected)، **مشروط** بأن الهيكل بلغ `shariah_approved`. يصنعها author (submit) ثم editor (approved) ثم admin (published).
-  - **الظهور(L):** `structure.review_status='shariah_approved' AND translation[L].review_status='published'`؛ وإلا رجوع للعربية مع إشارة.
-- **الأثر:** `review_transitions` يصبح مدرك الطبقة (عمود layer أو جدولان)؛ يُحدَّث D7 + contract + RLS بعد التأكيد. **لا يُنفَّذ 0011/0014 على النموذج المتناقض.**
-- **المبرّر:** يحقّق توجيه ٣ فعليًا (فصل الشرعي عن التحريري بلا تكرار) ويطابق أدوار لبنة ١٥.
+- **القرار:** طبقتان مستقلتان، كلٌّ سلسلتها (لا تكرار خط الأنابيب):
+  - الهيكل (event/person/location/claim) = المراجعة **الشرعية**: `draft → submitted → shariah_approved` (+needs_revision/rejected). author (submit) ثم shariah_reviewer.
+  - الترجمة (لكل لغة) = المراجعة **التحريرية**: `draft → submitted → approved → published` (+needs_revision/rejected)، **مشروط** ببلوغ الهيكل `shariah_approved`. author (submit) ثم editor (approved) ثم admin (published).
+- **الظهور(L):** `structure.review_status='shariah_approved' AND translation[L].review_status='published'`؛ وإلا رجوع للعربية مع إشارة.
+- **المبرّر:** يحقّق توجيه ٣ فعليًا (فصل الشرعي عن التحريري بلا تكرار) ويطابق أدوار لبنة ١٥. [العقد الكامل: contracts/state-machine.md]
 
 ## D7 — آلة حالات المراجعة (للجميع، بالدور، بلا أخطاء الخطة القديمة)
 
-- **القرار:** `review_transitions(from_code, to_code)` (FK لـ review_states). دالة `enforce_review_transition()` (trigger BEFORE UPDATE على كل كيان ذي حالة): (أ) ترفض أي انتقال خارج الجدول **للجميع بما فيهم المدير/postgres**؛ (ب) تتحقق أن **دور المستخدم الحالي** مخوّل بهذا الانتقال المحدّد عبر مقارنة OLD→NEW حقيقية.
+- **القرار:** `review_transitions(layer, from_code, to_code, role_code)` مدرك للطبقة (FK لـ review_states/roles؛ PK(layer,from,to)). دالة `enforce_review_transition()` (trigger BEFORE UPDATE، تتلقّى `layer` عبر TG_ARGV: 'structure' لكيانات الهيكل، 'translation' لـ `*_translations`): (أ) ترفض أي انتقال خارج جدول طبقته **للجميع بما فيهم المدير/postgres**؛ (ب) تتحقق أن **دور المستخدم الحالي** = `role_code` للانتقال (مقارنة OLD→NEW حقيقية)؛ (ج) **شرط بين الطبقتين:** ترجمة لا تبلغ approved/published إلا والهيكل الأب `shariah_approved`.
 - **تصحيح أخطاء الخطة القديمة:** لا `can_make_transition(x,x)` (لا-عملية)؛ التحقق بالدور يقارن OLD.code→NEW.code فعليًا. لا اعتماد على `auth.uid() IS NOT NULL` وحده كباب خلفي؛ غياب المستخدم (سياق خدمة) لا يتخطّى **جدول** الانتقالات (المنع البنيوي يبقى).
-- **الانتقالات:** draft→submitted (author) · submitted→{shariah_approved|needs_revision|rejected} (shariah_reviewer) · shariah_approved→{approved|needs_revision|rejected} (editor) · approved→{published|needs_revision} (admin) · published→approved (admin، سحب نشر) · needs_revision→submitted (author). [العقد الكامل في contracts/state-machine.md]
+- **الانتقالات (مدركة للطبقة):** الهيكل: draft→submitted (author) · submitted→{shariah_approved|needs_revision|rejected} (shariah_reviewer) · needs_revision→submitted (author). الترجمة: draft→submitted (author) · submitted→{approved|needs_revision|rejected} (editor، وapproved مشروط) · approved→published (admin، مشروط) · published→approved (admin) · needs_revision→submitted (author). [الجدول الكامل والشروط في contracts/state-machine.md]
 
 ## D8 — الحذف الناعم + التفرّد الجزئي
 

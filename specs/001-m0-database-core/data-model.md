@@ -276,14 +276,17 @@ notification_outbox (
 ## 11) آلة حالات المراجعة
 
 ```
-review_transitions (
+review_transitions (                       -- مدرك للطبقة (D6/D7، س٥)
+  layer     text not null,                  -- 'structure' | 'translation'
   from_code text not null references review_states(code),
   to_code   text not null references review_states(code),
-  primary key (from_code, to_code)
+  role_code text not null references roles(code),
+  primary key (layer, from_code, to_code)
 )
 ```
-- البذرة والانتقالات المسموحة + من يصنع كلًّا: في [contracts/state-machine.md](./contracts/state-machine.md).
-- `enforce_review_transition()` trigger BEFORE UPDATE على events/persons/locations/claims و(للترجمة) على `*_translations` — يفرض الجدول للجميع + الدور بالمقارنة OLD→NEW (D7).
+- الطبقتان وانتقالاتهما + الدور + الشرط بين الطبقتين + قاعدة الظهور: في [contracts/state-machine.md](./contracts/state-machine.md).
+- `enforce_review_transition()` trigger BEFORE UPDATE يتلقّى `layer` عبر TG_ARGV: `'structure'` على events/persons/locations/claims، و`'translation'` على `*_translations` — يفرض جدول الطبقة للجميع + الدور (مقارنة OLD→NEW) + شرط "الترجمة لا تبلغ approved/published إلا والهيكل الأب shariah_approved" (D7).
+- **الهيكل** ينتهي عند `shariah_approved` (شرعي)؛ **الترجمة** تنتهي عند `published` (تحريري). **الظهور(L)** = الهيكل shariah_approved AND ترجمة L published.
 
 ---
 

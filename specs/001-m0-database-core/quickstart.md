@@ -35,7 +35,7 @@ supabase db push                    # يدفع الترحيلات المعتمد
 
 تُنفَّذ بـ `supabase test db` وكلها تمرّ خضراء:
 
-1. **بوابة المراجعة (US1):** `draft→published` مباشرة يُرفض حتى للمدير؛ anon يرى المنشور فقط. → `05_state_machine`, `07_rls`
+1. **بوابة المراجعة (US1، مدرك للطبقة):** الهيكل لا يقفز لـ shariah_approved، والترجمة لا تقفز لـ published — حتى للمدير؛ الترجمة لا تُعتمد إلا والهيكل shariah_approved؛ anon يرى "الظاهر" فقط (هيكل shariah_approved AND ترجمة published). → `05_state_machine`, `07_rls`
 2. **التوثيق (US2):** claim بلا استشهاد يُرفض؛ "حكم" بلا grading_source يُرفض. → `03_constraints`
 3. **التدقيق (US3):** تعديل حرف تشكيل يُنتج صف تدقيق؛ UPDATE/DELETE على audit_log يفشل حتى لـ admin. → `06_audit`
 4. **اللغات (US4):** (entity_id,lang) فريد؛ ترجمة غير منشورة لا تظهر؛ claim مشترك بترقيم مشتق لكل لغة. → `04_translations`

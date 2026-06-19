@@ -71,8 +71,8 @@
 
 > **هدف القصة:** لا نشر يتخطّى الطبقات حتى للمدير. **اختبار مستقل:** `draft→published` يُرفض للجميع.
 
-- [ ] T024 [US1] اختبار `supabase/tests/05_state_machine.sql` (أحمر): `draft→published` يُرفض حتى بدور postgres (P0001)؛ `draft→submitted` بدور author يُقبل وبدور shariah_reviewer يُرفض؛ `submitted→published` يُرفض؛ `submitted→shariah_approved` بدور editor يُرفض وبدور shariah_reviewer يُقبل؛ `approved→published` بدور admin يُقبل وبدور author يُرفض. يفشل (لا trigger بعد). [راجع contracts/state-machine.md]
-- [ ] T025 [US1] تنفيذ `supabase/migrations/0011_state_machine.sql` (review_transitions + بذرة الانتقالات؛ `enforce_review_transition()` trigger BEFORE UPDATE على events/persons/locations/claims و`*_translations`؛ يفرض الجدول للجميع + الدور بمقارنة OLD.code→NEW.code فعليًا — **بلا can_make_transition(x,x) وبلا تجاوز auth.uid وحده**) → أخضر → commit. **[blockedBy T024, T017, T015]** — (FR-021..025, SC-001؛ مبدأ III)
+- [ ] T024 [US1] اختبار `supabase/tests/05_state_machine.sql` (أحمر) — **نموذج مدرك للطبقة (س٥)**: **الهيكل:** `draft→shariah_approved` مباشرة يُرفض حتى لـ postgres (P0001)؛ `draft→submitted` author يُقبل/shariah_reviewer يُرفض؛ `submitted→shariah_approved` editor يُرفض/shariah_reviewer يُقبل؛ أي `published` على الهيكل يُرفض. **الترجمة:** `draft→published` يُرفض؛ `submitted→approved` والهيكل الأب ليس shariah_approved يُرفض؛ `submitted→approved` editor (والهيكل shariah_approved) يُقبل/author يُرفض؛ `approved→published` admin يُقبل/editor يُرفض. يفشل (لا trigger بعد). [contracts/state-machine.md]
+- [ ] T025 [US1] تنفيذ `supabase/migrations/0011_state_machine.sql` (`review_transitions(layer, from_code, to_code, role_code)` مدرك للطبقة + بذرة طبقتي structure/translation؛ `enforce_review_transition()` trigger BEFORE UPDATE يتلقّى layer عبر TG_ARGV — 'structure' على events/persons/locations/claims و'translation' على `*_translations`؛ يفرض جدول الطبقة للجميع + الدور بمقارنة OLD.code→NEW.code + شرط "ترجمة→approved/published يتطلب الهيكل الأب shariah_approved" — **بلا can_make_transition(x,x) وبلا تجاوز auth.uid وحده**) → أخضر → commit. **[blockedBy T024, T017, T015]** — (FR-021..025, SC-001؛ مبدأ III)
 
 **Checkpoint:** بوابة المراجعة مفروضة بنيويًا للجميع.
 
@@ -102,8 +102,8 @@
 
 > **هدف القصة:** anon يرى المنشور فقط؛ أقل-امتياز؛ الكتابة تتطلب 2FA (aal2). **اختبار مستقل:** anon لا يرى المسودات؛ author لا ينشر.
 
-- [ ] T030 [US6] اختبار `supabase/tests/07_rls.sql` (أحمر): anon يرى events المنشورة فقط ولا يكتب (42501)؛ دور تحريري يرى المسودات؛ author لا يصنع `approved→published`؛ الكتابة/المراجعة/الإدارة تتطلب `aal2` (aal1 يُرفض)؛ المصدر غير approved لا يُستشهد به. يفشل.
-- [ ] T031 [US6] تنفيذ `supabase/migrations/0014_rls.sql` (تفعيل RLS على كل الجداول + سياسات: قراءة عامة=published، قراءة كاملة للأدوار، كتابة بأقل-امتياز، انتقال بالدور، اشتراط aal2 للكتابة/المراجعة/الإدارة، حماية sources غير approved) → أخضر → commit. **[blockedBy T030, T027, T009]** — (FR-024/032/033/034/042, SC-006؛ مبادئ III/VIII)
+- [ ] T030 [US6] اختبار `supabase/tests/07_rls.sql` (أحمر): anon يرى **"الظاهر" فقط** (الهيكل shariah_approved AND ترجمة اللغة published) ولا يكتب (42501)؛ دور تحريري يرى المسودات؛ author لا يصنع انتقالات المدير/المحرّر؛ الكتابة/المراجعة/الإدارة تتطلب `aal2` (aal1 يُرفض)؛ المصدر غير approved لا يُستشهد به. يفشل.
+- [ ] T031 [US6] تنفيذ `supabase/migrations/0014_rls.sql` (تفعيل RLS على كل الجداول + سياسات: قراءة anon = "الظاهر" (الهيكل shariah_approved AND ترجمة published)، قراءة كاملة للأدوار، كتابة بأقل-امتياز، الانتقال بالدور والطبقة، اشتراط aal2 للكتابة/المراجعة/الإدارة، حماية sources غير approved) → أخضر → commit. **[blockedBy T030, T027, T009]** — (FR-024/032/033/034/042, SC-006؛ مبادئ III/VIII)
 
 **Checkpoint:** الوصول مؤمَّن، الرؤية مضبوطة، 2FA جاهز.
 
