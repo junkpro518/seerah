@@ -30,6 +30,12 @@ Templates consistency check:
   ✅ CLAUDE.md / AGENTS.md                     — spec-first + workflow rules align with Principles VII and Governance
 
 Deferred / TODO: none. (Project brand name intentionally unset — see Governance.)
+
+AMENDMENTS:
+  1.0.1 (2026-06-19, PATCH): Workflow clarification — the pgTAP red-green loop runs on an
+  ephemeral LOCAL Postgres (Docker via `supabase start`, freely resettable); approved migrations
+  are pushed to the cloud via `supabase db push`. Docker is a throwaway test lab, NOT hosting;
+  the cloud project is NEVER reset (Principle VI). No principle added or removed.
 -->
 
 # دستور موسوعة السيرة النبوية الموثّقة
@@ -153,6 +159,7 @@ Deferred / TODO: none. (Project brand name intentionally unset — see Governanc
 - **سير التزامن:** محلي → GitHub → السيرفر؛ commit عند **كل خطوة/تعديل**. الترحيلات في Git = مصدر الحقيقة.
 - **أداة Spec Kit** تبقى على آخر تحديث (`specify self upgrade`)؛ يُتحقّق من تثبيتها قبل أي عمل.
 - **TDD بـ pgTAP:** اختبار فاشل أولًا ثم تنفيذ؛ يُطبَّق على Supabase الثاني عبر CLI (لا أدوات MCP للحساب الخطأ).
+- **بيئة الاختبار (صقل قرار ٢٠، 2026-06-19):** حلقة pgTAP (أحمر→أخضر) تعمل على قاعدة Postgres **محلية زائلة** (Docker عبر `supabase start`) تُصفَّر بحرية؛ والترحيلات المعتمدة تُدفع للسحابي عبر `supabase db push`. **Docker = مختبر اختبار محلي مؤقت لا قاعدة/استضافة؛ والسحابي لا يُصفَّر إطلاقًا** (مبدأ VI).
 - **بوابة الموافقة:** الدستور + spec + plan + tasks تُعرض على المالك، ولا `implement` قبل موافقته الصريحة.
 
 ## Governance
@@ -167,4 +174,4 @@ Deferred / TODO: none. (Project brand name intentionally unset — see Governanc
 - **اسم المشروع** مؤجّل عمدًا: يُحفظ في إعداد واحد ولا يُزرع في الكود أو الروابط.
 - **الامتثال:** كل spec/plan/tasks ومراجعة كود يجب أن تتحقق من توافقها مع هذه المبادئ.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-18 | **Last Amended**: 2026-06-19
+**Version**: 1.0.1 | **Ratified**: 2026-06-18 | **Last Amended**: 2026-06-19
