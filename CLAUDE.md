@@ -148,5 +148,7 @@ When changing one file, review the other file and update any shared rules so bot
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+`specs/001-m0-database-core/plan.md` (+ research.md, data-model.md, quickstart.md,
+contracts/state-machine.md). Decision source: docs/CONCEPT.md, docs/GAPS.md.
 <!-- SPECKIT END -->
