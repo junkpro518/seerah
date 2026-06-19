@@ -1,1 +1,15 @@
 .DS_Store
+
+# Secrets / env
+.env
+.env.*
+
+# Backups (db dumps)
+backups/
+
+# Node (م١ لاحقًا)
+node_modules/
+
+# Supabase local (إضافة لـ supabase/.gitignore)
+supabase/.branches
+supabase/.temp
