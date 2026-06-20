@@ -30,7 +30,7 @@ as $$
   );
 $$;
 
-select plan(29);
+select plan(38);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_column('public', 'profiles', 'id', 'profiles.id exists');
@@ -85,5 +85,16 @@ select ok(
   test_helpers.fk_exists('persons', 'review_status_code', 'review_states', 'code'),
   'persons.review_status_code references review_states.code'
 );
+
+select has_table('public', 'event_persons', 'event_persons table exists');
+select has_column('public', 'event_persons', 'participation_evidence', 'event_persons.participation_evidence exists');
+select has_column('public', 'event_persons', 'citation_id', 'event_persons.citation_id exists');
+select ok(test_helpers.fk_exists('event_persons', 'event_id', 'events', 'id'), 'event_persons.event_id references events.id');
+select ok(test_helpers.fk_exists('event_persons', 'person_id', 'persons', 'id'), 'event_persons.person_id references persons.id');
+select ok(test_helpers.fk_exists('event_persons', 'citation_id', 'citations', 'id'), 'event_persons.citation_id references citations.id');
+
+select has_table('public', 'event_locations', 'event_locations table exists');
+select has_column('public', 'event_locations', 'order_index', 'event_locations.order_index exists');
+select ok(test_helpers.fk_exists('event_locations', 'location_id', 'locations', 'id'), 'event_locations.location_id references locations.id');
 
 select * from finish();
