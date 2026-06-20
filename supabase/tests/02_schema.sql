@@ -30,7 +30,7 @@ as $$
   );
 $$;
 
-select plan(9);
+select plan(11);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_column('public', 'profiles', 'id', 'profiles.id exists');
@@ -46,5 +46,8 @@ select ok(
 
 select isnt(to_regprocedure('public.current_role_name()'), null::regprocedure, 'current_role_name function exists');
 select isnt(to_regprocedure('public.set_updated_at()'), null::regprocedure, 'set_updated_at trigger function exists');
+
+select has_table('public', 'sources', 'sources table exists');
+select has_table('public', 'citations', 'citations table exists');
 
 select * from finish();
