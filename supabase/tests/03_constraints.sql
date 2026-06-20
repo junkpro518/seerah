@@ -12,7 +12,7 @@ begin
   end if;
 
   insert into public.sources (slug, title, source_type_code, status_code)
-  values ('constraint-source-no-grading-source', 'Constraint Source', 'hadith', 'approved')
+  values ('constraint-source-no-grading-source-' || gen_random_uuid(), 'Constraint Source', 'hadith', 'approved')
   returning id into v_source_id;
 
   begin
@@ -37,7 +37,7 @@ begin
   end if;
 
   insert into public.sources (slug, title, source_type_code, status_code)
-  values ('constraint-source-with-grading-source', 'Constraint Source', 'hadith', 'approved')
+  values ('constraint-source-with-grading-source-' || gen_random_uuid(), 'Constraint Source', 'hadith', 'approved')
   returning id into v_source_id;
 
   insert into public.citations (source_id, reference_text, grading, grading_source)
@@ -59,7 +59,7 @@ begin
   end if;
 
   insert into public.sources (slug, title, source_type_code, status_code)
-  values ('constraint-source-blank-grading-source', 'Constraint Source', 'hadith', 'approved')
+  values ('constraint-source-blank-grading-source-' || gen_random_uuid(), 'Constraint Source', 'hadith', 'approved')
   returning id into v_source_id;
 
   begin

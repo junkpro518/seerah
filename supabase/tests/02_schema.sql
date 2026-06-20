@@ -30,7 +30,7 @@ as $$
   );
 $$;
 
-select plan(11);
+select plan(29);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_column('public', 'profiles', 'id', 'profiles.id exists');
@@ -49,5 +49,41 @@ select isnt(to_regprocedure('public.set_updated_at()'), null::regprocedure, 'set
 
 select has_table('public', 'sources', 'sources table exists');
 select has_table('public', 'citations', 'citations table exists');
+
+select has_table('public', 'locations', 'locations table exists');
+select has_column('public', 'locations', 'geo_confidence_code', 'locations.geo_confidence_code exists');
+select has_column('public', 'locations', 'review_status_code', 'locations.review_status_code exists');
+select has_column('public', 'locations', 'deleted_at', 'locations.deleted_at exists');
+select ok(
+  test_helpers.fk_exists('locations', 'geo_confidence_code', 'confidence_levels', 'code'),
+  'locations.geo_confidence_code references confidence_levels.code'
+);
+select ok(
+  test_helpers.fk_exists('locations', 'review_status_code', 'review_states', 'code'),
+  'locations.review_status_code references review_states.code'
+);
+
+select has_table('public', 'events', 'events table exists');
+select has_column('public', 'events', 'timeline_order', 'events.timeline_order exists');
+select has_column('public', 'events', 'approx_year_signed', 'events.approx_year_signed exists');
+select has_column('public', 'events', 'deleted_at', 'events.deleted_at exists');
+select ok(
+  test_helpers.fk_exists('events', 'primary_location_id', 'locations', 'id'),
+  'events.primary_location_id references locations.id'
+);
+select ok(
+  test_helpers.fk_exists('events', 'review_status_code', 'review_states', 'code'),
+  'events.review_status_code references review_states.code'
+);
+
+select has_table('public', 'persons', 'persons table exists');
+select has_column('public', 'persons', 'full_name', 'persons.full_name exists');
+select has_column('public', 'persons', 'kunya', 'persons.kunya exists');
+select has_column('public', 'persons', 'title', 'persons.title exists');
+select has_column('public', 'persons', 'deleted_at', 'persons.deleted_at exists');
+select ok(
+  test_helpers.fk_exists('persons', 'review_status_code', 'review_states', 'code'),
+  'persons.review_status_code references review_states.code'
+);
 
 select * from finish();
