@@ -237,7 +237,80 @@ begin
 end;
 $$;
 
-select plan(8);
+
+create or replace function test_helpers.content_note_without_container_rejected()
+returns boolean
+language plpgsql
+as $$
+begin
+  if to_regclass('public.content_notes') is null then
+    return false;
+  end if;
+
+  begin
+    insert into public.content_notes (note_type_code, body)
+    values ('editorial_note', 'note');
+    return false;
+  exception when check_violation then
+    return true;
+  end;
+end;
+$$;
+
+create or replace function test_helpers.content_note_with_two_containers_rejected()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_event_id uuid;
+  v_source_id uuid;
+begin
+  if to_regclass('public.content_notes') is null then
+    return false;
+  end if;
+
+  insert into public.events (timeline_order)
+  values (floor(random() * 100000000)::integer)
+  returning id into v_event_id;
+
+  insert into public.sources (slug, title, source_type_code, status_code)
+  values ('content-note-source-two-' || gen_random_uuid(), 'Content Note Source', 'other', 'approved')
+  returning id into v_source_id;
+
+  begin
+    insert into public.content_notes (event_id, source_id, note_type_code, body)
+    values (v_event_id, v_source_id, 'editorial_note', 'note');
+    return false;
+  exception when check_violation then
+    return true;
+  end;
+end;
+$$;
+
+create or replace function test_helpers.content_note_single_source_defaults_private()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_source_id uuid;
+  v_is_public boolean;
+begin
+  if to_regclass('public.content_notes') is null then
+    return false;
+  end if;
+
+  insert into public.sources (slug, title, source_type_code, status_code)
+  values ('content-note-source-one-' || gen_random_uuid(), 'Content Note Source', 'other', 'approved')
+  returning id into v_source_id;
+
+  insert into public.content_notes (source_id, note_type_code, body)
+  values (v_source_id, 'editorial_note', 'note')
+  returning is_public into v_is_public;
+
+  return v_is_public = false;
+end;
+$$;
+select plan(11);
 
 select ok(
   test_helpers.citation_without_grading_source_rejected(),
@@ -260,4 +333,7 @@ select ok(test_helpers.submitted_claim_without_citation_rejected(), 'submitted c
 select ok(test_helpers.claim_grade_without_grading_source_rejected(), 'claim grade requiring source needs qualifying citation');
 select ok(test_helpers.claim_grade_with_grading_source_accepted(), 'claim grade requiring source accepts qualifying citation');
 
+select ok(test_helpers.content_note_without_container_rejected(), 'content note without container is rejected');
+select ok(test_helpers.content_note_with_two_containers_rejected(), 'content note with two containers is rejected');
+select ok(test_helpers.content_note_single_source_defaults_private(), 'content note with one source defaults private');
 select * from finish();

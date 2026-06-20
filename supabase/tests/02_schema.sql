@@ -30,7 +30,7 @@ as $$
   );
 $$;
 
-select plan(38);
+select plan(48);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_column('public', 'profiles', 'id', 'profiles.id exists');
@@ -97,4 +97,24 @@ select has_table('public', 'event_locations', 'event_locations table exists');
 select has_column('public', 'event_locations', 'order_index', 'event_locations.order_index exists');
 select ok(test_helpers.fk_exists('event_locations', 'location_id', 'locations', 'id'), 'event_locations.location_id references locations.id');
 
+select has_table('public', 'content_notes', 'content_notes table exists');
+select has_column('public', 'content_notes', 'event_id', 'content_notes.event_id exists');
+select has_column('public', 'content_notes', 'person_id', 'content_notes.person_id exists');
+select has_column('public', 'content_notes', 'location_id', 'content_notes.location_id exists');
+select has_column('public', 'content_notes', 'source_id', 'content_notes.source_id exists');
+select has_column('public', 'content_notes', 'note_type_code', 'content_notes.note_type_code exists');
+select has_column('public', 'content_notes', 'body', 'content_notes.body exists');
+select has_column('public', 'content_notes', 'is_public', 'content_notes.is_public exists');
+select ok(test_helpers.fk_exists('content_notes', 'note_type_code', 'note_types', 'code'), 'content_notes.note_type_code references note_types.code');
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'content_notes'
+      and column_name = 'is_public'
+      and column_default = 'false'
+  ),
+  'content_notes.is_public defaults false'
+);
 select * from finish();
