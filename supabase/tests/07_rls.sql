@@ -363,7 +363,61 @@ begin
 end;
 $$;
 
-select plan(15);
+-- SC-008: an unpublished translation must not appear, even under a published parent.
+create or replace function test_helpers.unpublished_translation_hidden_from_anon()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_ev uuid;
+  v_tr uuid;
+  v_count integer;
+begin
+  if not test_helpers.rls_active() then return false; end if;
+
+  insert into public.events (timeline_order)
+  values (floor(random() * 100000000)::integer)
+  returning id into v_ev;
+  perform test_helpers.seed_to_state('public.events'::regclass, v_ev, 'published');  -- parent published
+  insert into public.event_translations (event_id, lang, body)
+  values (v_ev, 'ar', '{}'::jsonb)
+  returning id into v_tr;
+  perform test_helpers.seed_to_state('public.event_translations'::regclass, v_tr, 'approved');  -- translation not published
+
+  perform test_helpers.as_anon();
+  select count(*) into v_count from public.event_translations where id = v_tr;
+  perform test_helpers.reset_auth_context();
+  return v_count = 0;
+end;
+$$;
+
+-- SC-009: no physical delete — app roles have no DELETE grant (soft delete only).
+create or replace function test_helpers.physical_delete_blocked_for_staff()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_id uuid;
+begin
+  if not test_helpers.rls_active() then return false; end if;
+
+  insert into public.events (timeline_order)
+  values (floor(random() * 100000000)::integer)
+  returning id into v_id;
+
+  perform test_helpers.become('editor', 'aal2');
+  begin
+    delete from public.events where id = v_id;
+    perform test_helpers.reset_auth_context();
+    return false;
+  exception when insufficient_privilege then
+    perform test_helpers.reset_auth_context();
+    return true;
+  end;
+end;
+$$;
+
+select plan(17);
 
 select ok(
   test_helpers.rls_enabled_on(array['events','persons','locations','claims','sources','citations',
@@ -384,5 +438,7 @@ select ok(test_helpers.outbox_readable_by_admin(), 'notification_outbox readable
 select ok(test_helpers.content_notes_hidden_from_anon(), 'content_notes not readable by anon');
 select ok(test_helpers.translation_hidden_when_parent_draft(), 'published translation hidden from anon when parent is draft');
 select ok(test_helpers.translation_visible_when_parent_published(), 'published translation visible to anon when parent is published');
+select ok(test_helpers.unpublished_translation_hidden_from_anon(), 'SC-008: unpublished translation hidden from anon even under a published parent');
+select ok(test_helpers.physical_delete_blocked_for_staff(), 'SC-009: physical DELETE blocked for staff (soft delete only)');
 
 select * from finish();
