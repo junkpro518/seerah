@@ -103,10 +103,20 @@ begin
   -- Explicit test-only bypass used to set up advanced review states after the
   -- state-machine migration exists. Tests that target transitions should still
   -- exercise the real transition path directly.
+  -- SECURITY DEFINER only bypasses RLS, not triggers; session_replication_role =
+  -- replica disables the enforce_review_transition trigger (added in 0011) so a
+  -- direct jump (e.g. draft -> published) succeeds for seeding (plan.md §test stability).
+  -- Restore immediately so the bypass is scoped to this UPDATE only (SET LOCAL is
+  -- transaction-scoped and pgTAP runs the whole file in one transaction).
+  set local session_replication_role = replica;
+
   execute format('update %s set review_status_code = $1 where id = $2', p_table)
     using p_target_state, p_id;
 
   get diagnostics v_rows = row_count;
+
+  set local session_replication_role = origin;
+
   if v_rows <> 1 then
     raise exception 'seed_to_state expected one row in %, updated %', p_table, v_rows;
   end if;
