@@ -141,12 +141,18 @@ begin
   values (v_event_id, 'event_origin')
   returning id into v_claim_id;
 
+  -- author makes the draft->submitted transition valid, so the citation trigger
+  -- (which fires first) is what rejects — not the state-machine role check.
+  perform test_helpers.set_jwt_claims(test_helpers.create_role_user('author'));
+
   begin
     update public.claims
     set review_status_code = 'submitted'
     where id = v_claim_id;
+    perform test_helpers.reset_auth_context();
     return false;
   exception when raise_exception then
+    perform test_helpers.reset_auth_context();
     return true;
   end;
 end;
@@ -185,12 +191,16 @@ begin
   insert into public.claim_citations (claim_id, citation_id, relation_code)
   values (v_claim_id, v_citation_id, 'primary');
 
+  perform test_helpers.set_jwt_claims(test_helpers.create_role_user('author'));
+
   begin
     update public.claims
     set review_status_code = 'submitted'
     where id = v_claim_id;
+    perform test_helpers.reset_auth_context();
     return false;
   exception when raise_exception then
+    perform test_helpers.reset_auth_context();
     return true;
   end;
 end;
@@ -229,10 +239,13 @@ begin
   insert into public.claim_citations (claim_id, citation_id, relation_code)
   values (v_claim_id, v_citation_id, 'primary');
 
+  perform test_helpers.set_jwt_claims(test_helpers.create_role_user('author'));
+
   update public.claims
   set review_status_code = 'submitted'
   where id = v_claim_id;
 
+  perform test_helpers.reset_auth_context();
   return true;
 end;
 $$;
