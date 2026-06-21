@@ -31,10 +31,6 @@ create table public.event_locations (
   deleted_at timestamptz
 );
 
-create unique index event_locations_live_uniq
-  on public.event_locations (event_id, location_id, role)
-  where deleted_at is null;
-
 create index event_locations_event_id_idx on public.event_locations (event_id);
 create index event_locations_location_id_idx on public.event_locations (location_id);
 create index event_locations_order_index_idx on public.event_locations (order_index);
