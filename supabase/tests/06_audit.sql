@@ -231,7 +231,79 @@ begin
 end;
 $$;
 
-select plan(17);
+-- T026 addendum: reference lookups, lookup_labels, and review_transitions are
+-- also audited ("audit everything"). RED until 0013 attaches the trigger to them.
+
+create or replace function test_helpers.reference_lookup_change_is_audited()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_ok boolean;
+begin
+  if to_regclass('public.audit_log') is null then
+    return false;
+  end if;
+
+  update public.doc_grades set color = '#abcdef' where code = 'sahih_hadith';
+
+  select exists (
+    select 1 from public.audit_log
+    where table_name = 'doc_grades' and row_id = 'sahih_hadith' and op = 'UPDATE'
+      and new_data ->> 'color' = '#abcdef' and occurred_at is not null
+  ) into v_ok;
+  return v_ok;
+end;
+$$;
+
+create or replace function test_helpers.lookup_label_change_is_audited()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_ok boolean;
+begin
+  if to_regclass('public.audit_log') is null then
+    return false;
+  end if;
+
+  update public.lookup_labels set label = 'حديث صحيح (مدقّق)'
+  where domain = 'doc_grades' and code = 'sahih_hadith' and lang = 'ar';
+
+  select exists (
+    select 1 from public.audit_log
+    where table_name = 'lookup_labels' and row_id = 'doc_grades/sahih_hadith/ar' and op = 'UPDATE'
+      and new_data ->> 'label' = 'حديث صحيح (مدقّق)'
+  ) into v_ok;
+  return v_ok;
+end;
+$$;
+
+create or replace function test_helpers.review_transition_change_is_audited()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_ok boolean;
+begin
+  if to_regclass('public.audit_log') is null then
+    return false;
+  end if;
+
+  update public.review_transitions set role_code = 'admin'
+  where layer = 'translation' and from_code = 'draft' and to_code = 'submitted';
+
+  select exists (
+    select 1 from public.audit_log
+    where table_name = 'review_transitions' and row_id = 'translation/draft/submitted' and op = 'UPDATE'
+      and old_data ->> 'role_code' = 'author'
+      and new_data ->> 'role_code' = 'admin'
+  ) into v_ok;
+  return v_ok;
+end;
+$$;
+
+select plan(20);
 
 select has_table('public', 'audit_log', 'audit_log table exists');
 select has_column('public', 'audit_log', 'table_name', 'audit_log.table_name exists');
@@ -251,5 +323,9 @@ select ok(test_helpers.source_status_change_is_audited(), 'sources.status_code a
 select ok(test_helpers.audit_log_update_blocked(), 'UPDATE on audit_log is blocked (append-only)');
 select ok(test_helpers.audit_log_delete_blocked(), 'DELETE on audit_log is blocked (append-only)');
 select ok(test_helpers.audit_log_direct_insert_blocked(), 'direct INSERT into audit_log is blocked');
+
+select ok(test_helpers.reference_lookup_change_is_audited(), 'reference lookup change (doc_grades) is audited');
+select ok(test_helpers.lookup_label_change_is_audited(), 'lookup_labels change is audited (composite row_id)');
+select ok(test_helpers.review_transition_change_is_audited(), 'review_transitions change is audited (composite row_id)');
 
 select * from finish();
