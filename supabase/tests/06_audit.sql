@@ -114,15 +114,19 @@ returns boolean
 language plpgsql
 as $$
 declare
-  v_id uuid;
+  v_id uuid := gen_random_uuid();
   v_ok boolean;
 begin
   if to_regclass('public.audit_log') is null then
     return false;
   end if;
 
-  -- created via replica bypass (not audited); the role change below runs normally.
-  v_id := test_helpers.create_role_user('author');
+  -- A real auth.users row gives the auto-created profile a valid FK parent, so the
+  -- role change below updates it cleanly (a replica-minted profile has no parent
+  -- and would violate profiles_id_fkey on update). The auto-profile starts at
+  -- role_code = 'author'.
+  insert into auth.users (id, aud, role, email)
+  values (v_id, 'authenticated', 'authenticated', concat(v_id::text, '@test.local'));
 
   update public.profiles set role_code = 'editor' where id = v_id;
 
