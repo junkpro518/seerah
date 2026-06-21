@@ -98,7 +98,164 @@ exception when unique_violation then
 end;
 $$;
 
-select plan(31);
+-- T022: body_plain is derived from body jsonb (text nodes only; claim_ref ignored).
+
+create or replace function test_helpers.sample_body()
+returns jsonb
+language sql
+immutable
+as $$
+  select '{"type":"doc","content":[
+    {"type":"paragraph","content":[
+      {"type":"text","text":"ثبت في الحديث الصحيح"},
+      {"type":"claim_ref","attrs":{"claim_id":"00000000-0000-0000-0000-000000000000"}},
+      {"type":"text","text":"أن النبي ﷺ هاجر"}
+    ]},
+    {"type":"paragraph","content":[
+      {"type":"text","text":"إلى المدينة"}
+    ]}
+  ]}'::jsonb;
+$$;
+
+create or replace function test_helpers.expected_plain()
+returns text
+language sql
+immutable
+as $$
+  select 'ثبت في الحديث الصحيح أن النبي ﷺ هاجر إلى المدينة';
+$$;
+
+create or replace function test_helpers.event_translation_body_plain_derived()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_event_id uuid;
+  v_plain text;
+begin
+  if to_regclass('public.event_translations') is null then
+    return false;
+  end if;
+
+  insert into public.events (timeline_order)
+  values (floor(random() * 100000000)::integer)
+  returning id into v_event_id;
+
+  insert into public.event_translations (event_id, lang, body)
+  values (v_event_id, 'ar', test_helpers.sample_body())
+  returning body_plain into v_plain;
+
+  return v_plain is not distinct from test_helpers.expected_plain();
+end;
+$$;
+
+create or replace function test_helpers.event_translation_body_plain_updates()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_event_id uuid;
+  v_tr_id uuid;
+  v_plain text;
+begin
+  if to_regclass('public.event_translations') is null then
+    return false;
+  end if;
+
+  insert into public.events (timeline_order)
+  values (floor(random() * 100000000)::integer)
+  returning id into v_event_id;
+
+  insert into public.event_translations (event_id, lang, body)
+  values (v_event_id, 'ar', '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"نص قديم"}]}]}'::jsonb)
+  returning id into v_tr_id;
+
+  update public.event_translations
+  set body = test_helpers.sample_body()
+  where id = v_tr_id
+  returning body_plain into v_plain;
+
+  return v_plain is not distinct from test_helpers.expected_plain();
+end;
+$$;
+
+create or replace function test_helpers.person_translation_body_plain_derived()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_person_id uuid;
+  v_plain text;
+begin
+  if to_regclass('public.person_translations') is null then
+    return false;
+  end if;
+
+  insert into public.persons (full_name)
+  values ('شخص اختبار ' || gen_random_uuid())
+  returning id into v_person_id;
+
+  insert into public.person_translations (person_id, lang, body)
+  values (v_person_id, 'ar', test_helpers.sample_body())
+  returning body_plain into v_plain;
+
+  return v_plain is not distinct from test_helpers.expected_plain();
+end;
+$$;
+
+create or replace function test_helpers.location_translation_body_plain_derived()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_location_id uuid;
+  v_plain text;
+begin
+  if to_regclass('public.location_translations') is null then
+    return false;
+  end if;
+
+  insert into public.locations default values
+  returning id into v_location_id;
+
+  insert into public.location_translations (location_id, lang, body)
+  values (v_location_id, 'ar', test_helpers.sample_body())
+  returning body_plain into v_plain;
+
+  return v_plain is not distinct from test_helpers.expected_plain();
+end;
+$$;
+
+create or replace function test_helpers.claim_translation_body_plain_derived()
+returns boolean
+language plpgsql
+as $$
+declare
+  v_event_id uuid;
+  v_claim_id uuid;
+  v_plain text;
+begin
+  if to_regclass('public.claim_translations') is null then
+    return false;
+  end if;
+
+  insert into public.events (timeline_order)
+  values (floor(random() * 100000000)::integer)
+  returning id into v_event_id;
+
+  insert into public.claims (event_id, claim_type_code)
+  values (v_event_id, 'event_origin')
+  returning id into v_claim_id;
+
+  insert into public.claim_translations (claim_id, lang, body)
+  values (v_claim_id, 'ar', test_helpers.sample_body())
+  returning body_plain into v_plain;
+
+  return v_plain is not distinct from test_helpers.expected_plain();
+end;
+$$;
+
+select plan(36);
 
 select has_table('public', 'event_translations', 'event_translations table exists');
 select has_column('public', 'event_translations', 'event_id', 'event_translations.event_id exists');
@@ -135,5 +292,11 @@ select has_column('public', 'claim_translations', 'review_status_code', 'claim_t
 select ok(test_helpers.event_translation_duplicate_lang_rejected(), 'live duplicate (event_id, lang) is rejected');
 select ok(test_helpers.event_translation_duplicate_live_slug_rejected(), 'live duplicate (lang, slug) is rejected');
 select ok(test_helpers.event_translation_soft_deleted_slug_reusable(), 'soft-deleted slug can be reused');
+
+select ok(test_helpers.event_translation_body_plain_derived(), 'event_translations.body_plain derived from body (claim_ref ignored)');
+select ok(test_helpers.event_translation_body_plain_updates(), 'event_translations.body_plain re-derived on body update');
+select ok(test_helpers.person_translation_body_plain_derived(), 'person_translations.body_plain derived from body');
+select ok(test_helpers.location_translation_body_plain_derived(), 'location_translations.body_plain derived from body');
+select ok(test_helpers.claim_translation_body_plain_derived(), 'claim_translations.body_plain derived from body');
 
 select * from finish();
