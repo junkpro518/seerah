@@ -123,7 +123,26 @@ begin
 end;
 $$;
 
-select plan(8);
+create or replace function test_helpers.create_role_user(p_role text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  -- Test-only: mint a profile carrying an app role so current_role_name() resolves it.
+  -- session_replication_role = replica disables the auth.users FK (and any RLS/triggers)
+  -- for this insert; restored to origin immediately after.
+  set local session_replication_role = replica;
+  insert into public.profiles (id, role_code) values (v_id, p_role);
+  set local session_replication_role = origin;
+  return v_id;
+end;
+$$;
+
+select plan(9);
 
 select has_schema('test_helpers', 'test helper schema exists');
 select isnt(to_regprocedure('test_helpers.set_jwt_claims(uuid,text,text)'), null::regprocedure, 'set_jwt_claims helper exists');
@@ -133,5 +152,6 @@ select isnt(to_regprocedure('test_helpers.as_authenticated(uuid,text)'), null::r
 select isnt(to_regprocedure('test_helpers.as_service_role(uuid,text)'), null::regprocedure, 'as_service_role helper exists');
 select isnt(to_regprocedure('test_helpers.reset_auth_context()'), null::regprocedure, 'reset_auth_context helper exists');
 select isnt(to_regprocedure('test_helpers.seed_to_state(regclass,uuid,text)'), null::regprocedure, 'seed_to_state helper exists');
+select isnt(to_regprocedure('test_helpers.create_role_user(text)'), null::regprocedure, 'create_role_user helper exists');
 
 select * from finish();
