@@ -3,12 +3,25 @@
 # Secrets / env
 .env
 .env.*
+!.env.example
 
 # Backups (db dumps)
 backups/
 
-# Node (م١ لاحقًا)
+# Node (م١)
 node_modules/
+
+# Next.js / build artifacts
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+.vitest/
 
 # Supabase local (إضافة لـ supabase/.gitignore)
 supabase/.branches
