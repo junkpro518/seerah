@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **3 open (deferred to /speckit-clarify by owner instruction)**
+- [x] No [NEEDS CLARIFICATION] markers remain — **resolved in clarify session 2026-06-22**
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic
@@ -29,11 +29,11 @@
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification (beyond owner-settled stack constraints)
 
-## Open Clarifications (agenda for /speckit-clarify)
+## Clarifications — RESOLVED (session 2026-06-22)
 
-1. **2FA recovery** (US1.4): recovery codes at enrollment, admin reset, or both?
-2. **Concurrent-edit policy** (Edge Cases): optimistic lock with conflict detection, or last-write-wins with warning?
-3. **Run/test environment** (FR-029): where is the app hosted (Node on server-2 / Vercel / Coolify), and M1 test depth (unit only, or + E2E for login/edit flows)?
+1. **2FA recovery** (FR-005, US1.4): **recovery codes at enrollment + admin reset** (both).
+2. **Concurrent-edit policy** (FR-030, Edge Cases): **optimistic lock with conflict detection** on save.
+3. **Run/test environment** (FR-029): **VPS (Contabo) via Coolify/Dokploy; unit + E2E** for login/2FA/edit flows.
 
 ## Notes
 
