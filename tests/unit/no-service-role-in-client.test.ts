@@ -82,3 +82,23 @@ describe("SC-008: service role never reaches the browser bundle", () => {
     expect(offenders, `files exposing service role via NEXT_PUBLIC_: ${offenders.join(", ")}`).toEqual([]);
   });
 });
+
+describe("data layer never bypasses RLS via the admin (service-role) client", () => {
+  // ثابت الطور ٢: طبقة الوصول تعتمد جلسة المستخدم + RLS فقط — لا تجاوز.
+  const dataFiles = collectSourceFiles("lib/data");
+
+  it("finds lib/data files to scan", () => {
+    expect(dataFiles.length).toBeGreaterThan(0);
+  });
+
+  it("no lib/data module imports lib/supabase/admin", () => {
+    const offenders: string[] = [];
+    for (const file of dataFiles) {
+      const src = readFileSync(file, "utf8");
+      if (/from\s+["'][^"']*supabase\/admin["']/.test(src)) {
+        offenders.push(path.relative(ROOT, file));
+      }
+    }
+    expect(offenders, `lib/data modules importing admin.ts: ${offenders.join(", ")}`).toEqual([]);
+  });
+});
