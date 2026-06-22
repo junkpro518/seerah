@@ -142,6 +142,15 @@ Tool-specific instructions may differ when necessary.
 
 When changing one file, review the other file and update any shared rules so both agents follow the same project standards.
 
+## 9. مزامنة وثيقة المشروع (Notion) وتنبيه المالك
+
+عند أي تغيير مهمّ في المشروع (معلم، اكتمال مرحلة/طور، تغيير سلوك أو بنية، قرار مؤثّر، نشر محتوى):
+
+1. تُحدَّث وثيقة المشروع على Notion — https://app.notion.com/p/38739125abb18062b36ec44c4b1d112a — (قسمَا "الوضع الحالي" و"سجل التحديثات")، بلغة بسيطة بلا مصطلحات تقنية (الجمهور: المالك والإداريون وأعضاء المجلس).
+2. يُنبَّه المالك صراحةً بالتغيير.
+
+(التغييرات التافهة — إملاء/تنسيق — لا تستلزم تحديثًا.)
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
