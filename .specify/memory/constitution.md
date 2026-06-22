@@ -36,6 +36,11 @@ AMENDMENTS:
   ephemeral LOCAL Postgres (Docker via `supabase start`, freely resettable); approved migrations
   are pushed to the cloud via `supabase db push`. Docker is a throwaway test lab, NOT hosting;
   the cloud project is NEVER reset (Principle VI). No principle added or removed.
+  1.1.0 (2026-06-22, MINOR): Scope line made evergreen. The "current scope = M0 only / no later
+  phases" constraint is replaced by "current scope = the approved phase per the active spec +
+  explicit owner permission" (currently M1 — authoring tool; M0 complete). Reflects owner
+  authorization to proceed beyond M0. No principle added or removed; the gating mechanism
+  (approved spec + owner permission, no code without spec) is unchanged.
 -->
 
 # دستور موسوعة السيرة النبوية الموثّقة
@@ -155,7 +160,7 @@ AMENDMENTS:
 
 ## سير التطوير وبوابات الجودة (Development Workflow & Quality Gates)
 
-- **النطاق الحالي: م٠ فقط** (نواة قاعدة البيانات + الأدوار + بوابة المراجعة + التدقيق الشامل + content_notes + جداول تعدد اللغات). لا تُبنى مراحل لاحقة.
+- **النطاق الحالي: المرحلة المُعتمدة حسب المواصفة النشطة وإذن المالك** (حاليًا **م١** — أداة الإدخال/المحرّر؛ **م٠ مكتمل**: نواة قاعدة البيانات + الأدوار + بوابة المراجعة + التدقيق الشامل + content_notes + جداول تعدد اللغات). لا تُبنى مرحلة بلا مواصفة معتمدة وإذن مالك صريح.
 - **سير التزامن:** محلي → GitHub → السيرفر؛ commit عند **كل خطوة/تعديل**. الترحيلات في Git = مصدر الحقيقة.
 - **أداة Spec Kit** تبقى على آخر تحديث (`specify self upgrade`)؛ يُتحقّق من تثبيتها قبل أي عمل.
 - **TDD بـ pgTAP:** اختبار فاشل أولًا ثم تنفيذ؛ يُطبَّق على Supabase الثاني عبر CLI (لا أدوات MCP للحساب الخطأ).
@@ -174,4 +179,4 @@ AMENDMENTS:
 - **اسم المشروع** مؤجّل عمدًا: يُحفظ في إعداد واحد ولا يُزرع في الكود أو الروابط.
 - **الامتثال:** كل spec/plan/tasks ومراجعة كود يجب أن تتحقق من توافقها مع هذه المبادئ.
 
-**Version**: 1.0.1 | **Ratified**: 2026-06-18 | **Last Amended**: 2026-06-19
+**Version**: 1.1.0 | **Ratified**: 2026-06-18 | **Last Amended**: 2026-06-22
