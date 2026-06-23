@@ -9,6 +9,13 @@ import {
   hashRecoveryCode,
   verifyRecoveryCode,
 } from "./recovery";
+import {
+  initialRecoveryThrottle,
+  evaluateRecoveryThrottle,
+  registerRecoveryFailure,
+  resetRecoveryThrottle,
+  type RecoveryThrottle,
+} from "./recoveryThrottle";
 
 type ActionError = { error: string };
 
@@ -61,8 +68,8 @@ export async function setupRecoveryCodes(): Promise<{ codes: string[] } | Action
  * T020 — الاستعادة: يعمل على aal1 (فقد العضو جهازه). userId من الجلسة فقط (لا من العميل)
  * فلا يُهاجَم رمز عضو آخر. يطابق hash (timingSafeEqual) → يحذف عامل TOTP → يستهلك الرمز.
  *
- * ⚠️ ثغرة معروفة (مُبلَّغة للمالك): لا خنق محاولات بعد — رمز صحيح يزيل 2FA = أوراكل تخمين.
- *   الرموز عالية الإنتروبيا تخفّف، لكن يلزم قفل محاولات لاحقًا.
+ * **قفل محاولات (تحصين):** بعد عدّة محاولات فاشلة ضمن نافذة، تُرفض الاستعادة مؤقتًا.
+ *   العدّاد ووقت القفل في app_metadata بجوار الرموز (لا تغيير مخطط)، يُصفَّران عند النجاح.
  */
 export async function recoverWithCode(code: string): Promise<{ ok: true } | ActionError> {
   const supabase = await createClient();
@@ -75,9 +82,24 @@ export async function recoverWithCode(code: string): Promise<{ ok: true } | Acti
   const { data: target, error: getErr } = await admin.auth.admin.getUserById(user.id);
   if (getErr || !target?.user) return { error: "تعذّرت الاستعادة." };
 
-  const hashes = (target.user.app_metadata?.mfa_recovery as string[] | undefined) ?? [];
+  const appMeta = (target.user.app_metadata ?? {}) as Record<string, unknown>;
+  const hashes = (appMeta.mfa_recovery as string[] | undefined) ?? [];
+  const throttle =
+    (appMeta.mfa_recovery_throttle as RecoveryThrottle | undefined) ?? initialRecoveryThrottle;
+
+  const now = Date.now();
+  if (evaluateRecoveryThrottle(throttle, now).locked) {
+    return { error: "محاولات كثيرة فاشلة. حاول لاحقًا." };
+  }
+
   const idx = verifyRecoveryCode(code, hashes);
-  if (idx === -1) return { error: "رمز غير صالح." };
+  if (idx === -1) {
+    const next = registerRecoveryFailure(throttle, now);
+    await admin.auth.admin.updateUserById(user.id, {
+      app_metadata: { ...appMeta, mfa_recovery_throttle: next },
+    });
+    return { error: "رمز غير صالح." };
+  }
 
   // حذف عوامل TOTP المسجّلة للعضو
   const { data: factors } = await admin.auth.admin.mfa.listFactors({ userId: user.id });
@@ -85,10 +107,14 @@ export async function recoverWithCode(code: string): Promise<{ ok: true } | Acti
     await admin.auth.admin.mfa.deleteFactor({ id: f.id, userId: user.id });
   }
 
-  // استهلاك الرمز (أحادي الاستخدام)
+  // استهلاك الرمز (أحادي الاستخدام) + تصفير القفل عند النجاح
   const remaining = hashes.filter((_, i) => i !== idx);
   await admin.auth.admin.updateUserById(user.id, {
-    app_metadata: { mfa_recovery: remaining },
+    app_metadata: {
+      ...appMeta,
+      mfa_recovery: remaining,
+      mfa_recovery_throttle: resetRecoveryThrottle(),
+    },
   });
 
   return { ok: true };
