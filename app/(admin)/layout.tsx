@@ -27,10 +27,15 @@ export default async function AdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
   try {
     await assertAal2(supabase);
   } catch (e) {
-    if (e instanceof Aal2RequiredError) redirect("/login");
+    if (e instanceof Aal2RequiredError) redirect("/mfa"); // مسجّل لكنه aal1 → خطوة التحقّق
     throw e;
   }
 
