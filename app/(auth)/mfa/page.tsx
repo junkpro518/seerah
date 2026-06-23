@@ -66,6 +66,9 @@ export default function MfaPage() {
         setBusy(false);
         return setMode("recoveryCodes");
       }
+      // فشل توليد الرموز (ميزة أمنية) — لا تتابع بصمت؛ اعرض الخطأ وأتح إعادة المحاولة
+      setBusy(false);
+      return setError(res.error);
     }
     window.location.href = "/claims";
   }

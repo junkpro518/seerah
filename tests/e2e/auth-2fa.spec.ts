@@ -16,9 +16,10 @@ const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_A
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ready = Boolean(url && anon && serviceKey);
 
-test.describe("US1 — login + mandatory 2FA", () => {
-  test.skip(!ready, "needs local stack env: NEXT_PUBLIC_SUPABASE_URL/ANON_KEY + SERVICE_ROLE_KEY");
+// تخطٍّ على مستوى المجموعة (غير ملتبس عبر إصدارات Playwright) إن غابت مفاتيح المكدّس المحلي
+const describeMaybe = ready ? test.describe : test.describe.skip;
 
+describeMaybe("US1 — login + mandatory 2FA", () => {
   const password = "Test-Passw0rd!";
 
   async function createConfirmedUser(email: string) {
