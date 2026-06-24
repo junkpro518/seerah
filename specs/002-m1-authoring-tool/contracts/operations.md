@@ -24,12 +24,18 @@
 
 ## B) محرّر المعلومة (claims)
 
+> **نموذج المعلومة (قرار المالك 2026-06-24، يطابق المخطط المبني + لبنة ٣٣):** المعلومة تحمل
+> **نصّها لكل لغة** في `claim_translations` (عنوان/ملخّص + body) إضافةً لبنيتها في `claims`
+> (حاوية واحدة + نوع + درجة + حالة). الطور ٥/US3 يربط سرد الكيانات بالمعلومة عبر `claimRef`.
+> (تصحيح عقد سابق صاغ المعلومة "بنيوية فقط" — بلا تغيير مخطط؛ claim_translations مبني في م٠.)
+
 | العملية | الفئة | المدخل → المخرج | الفرض |
 |---------|------|------------------|--------|
-| `createClaim` | aal2-staff | (containerType, containerId, claimType, docGrade) → claim(draft) | **حاوية واحدة** (قيد م٠)؛ الواجهة تمنع اختيار حاويتين |
+| `createClaim` | aal2-staff | (containerType, containerId, claimType, docGrade) → claim(draft) | **حاوية واحدة** (قيد م٠ num_nonnulls=1)؛ الواجهة تمنع اختيار حاويتين |
+| `saveClaimText` | aal2-staff | (claimId, lang, title, summary, loadedUpdatedAt?) → claim_translation | نصّ المعلومة لكل لغة (عنوان/ملخّص)؛ upsert على (claim_id, lang)؛ قفل تفاؤلي عند التعديل |
 | `updateClaim` | aal2-staff | (id, fields, loadedUpdatedAt) → claim | **قفل تفاؤلي** عبر updated_at؛ تعارض → خطأ "تغيّر الصف" |
-| `linkCitation` | aal2-staff | (claimId, citationId, relation) → claim_citation | الاختيار من **مصادر approved فقط** |
-| `submitClaim` | aal2-staff | (id, loadedUpdatedAt) → claim(submitted) | يُرفض إن لا استشهاد حيّ / درجة تتطلّب مصدر حكم بلا مصدر (قيود م٠) — تُعرض كرسائل استخدام |
+| `linkCitation` | aal2-staff | (claimId, citationId, relation) → claim_citation | الاختيار من **مصادر approved فقط** (قاعدة تطبيق — لا سند DB في م٠) |
+| `submitClaim` | aal2-staff | (id, loadedUpdatedAt) → claim(submitted) | يُرفض إن لا استشهاد حيّ / درجة تتطلّب مصدر حكم بلا مصدر (قيود م٠) — تُعرض كرسائل استخدام مشتقّة من فحص العميل (لا مطابقة نصّ خطأ DB) |
 
 ## C) السرد الغني (translations)
 
