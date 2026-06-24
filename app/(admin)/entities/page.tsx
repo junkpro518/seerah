@@ -64,8 +64,11 @@ export default function NarrativeEditorPage() {
       .eq("lang", lang)
       .is("deleted_at", null)
       .maybeSingle();
-    if (data?.body) {
-      editor.commands.setContent(data.body as object);
+    if (data) {
+      // body في م٠ افتراضه '{}' (ليس وثيقة ProseMirror صالحة) — fallback لوثيقة فارغة
+      const body = data.body as { type?: string } | null;
+      const doc = body && body.type === "doc" ? body : { type: "doc", content: [{ type: "paragraph" }] };
+      editor.commands.setContent(doc as object);
       setExisting({ id: data.id as string, updatedAt: data.updated_at as string });
     } else {
       setExisting(null);
