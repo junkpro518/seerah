@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
+    "test:e2e:check": "playwright test ; node scripts/e2e-status.mjs",
     "db:local:start": "supabase start",
     "db:local:reset": "supabase db reset",
     "db:local:stop": "supabase stop"
