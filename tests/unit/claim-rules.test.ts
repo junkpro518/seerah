@@ -4,6 +4,7 @@ import {
   validateSingleContainer,
   canSubmitClaim,
   claimUsageMessage,
+  canLinkCitationSource,
   CONTAINER_TYPES,
 } from "@/lib/claims/rules";
 
@@ -58,6 +59,15 @@ describe("submit rule (enforce_claim_submission_requirements)", () => {
     expect(
       canSubmitClaim({ hasLiveCitation: true, requiresGradingSource: true, hasGradingSourceCitation: true }),
     ).toEqual({ ok: true });
+  });
+});
+
+describe("approved-source-only link rule (app-level, no DB backing)", () => {
+  it("allows linking only when the source is approved", () => {
+    expect(canLinkCitationSource("approved")).toBe(true);
+    expect(canLinkCitationSource("proposed")).toBe(false);
+    expect(canLinkCitationSource("rejected")).toBe(false);
+    expect(canLinkCitationSource(null)).toBe(false);
   });
 });
 

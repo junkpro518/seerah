@@ -63,3 +63,11 @@ const MESSAGES: Record<ClaimBlockReason, string> = {
 export function claimUsageMessage(reason: ClaimBlockReason): string {
   return MESSAGES[reason];
 }
+
+/**
+ * قاعدة "الربط من مصادر معتمدة فقط" — **قاعدة تطبيق بلا سند DB في م٠** (لا قيد/RLS
+ * يمنع ربط استشهاد من مصدر غير معتمد). لذا تُفرض في طبقة التطبيق وتُختبر هنا.
+ */
+export function canLinkCitationSource(sourceStatus: string | null | undefined): boolean {
+  return sourceStatus === "approved";
+}
