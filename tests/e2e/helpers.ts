@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { authenticator } from "otplib";
+import { Client } from "pg";
 
 /** بيئة المكدّس المحلي الزائل (يضبطها السيرفر؛ لا يمسّ السحابي). */
 export function e2eEnv() {
@@ -46,4 +47,37 @@ export async function newAal2StaffClient(email: string): Promise<SupabaseClient>
   const { data: aal } = await client.auth.mfa.getAuthenticatorAssuranceLevel();
   expect(aal?.currentLevel).toBe("aal2");
   return client;
+}
+
+export async function currentUserId(client: SupabaseClient): Promise<string> {
+  const { data } = await client.auth.getUser();
+  return data.user!.id;
+}
+
+/**
+ * يضبط دور المستخدم في profiles عبر اتصال postgres مباشر (DATABASE_URL): profiles
+ * قابل للتحديث للمدير فقط تحت RLS، و service_role بلا صلاحيات جدول — فالاتصال المباشر
+ * (يتجاوز RLS) هو سبيل التهيئة في الاختبار. current_role_name() يقرأ profiles حيًّا فيظهر فورًا.
+ */
+export async function setUserRoleViaPg(userId: string, role: string): Promise<void> {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL required to set roles in review E2E");
+  const pg = new Client({ connectionString: databaseUrl });
+  await pg.connect();
+  try {
+    await pg.query("update public.profiles set role_code = $1 where id = $2", [role, userId]);
+  } finally {
+    await pg.end();
+  }
+}
+
+/** عميل aal2 بجلسة، مع ضبط دوره (غير author) عبر pg. */
+export async function newAal2RoleClient(
+  email: string,
+  role: string,
+): Promise<{ client: SupabaseClient; userId: string }> {
+  const client = await newAal2StaffClient(email);
+  const userId = await currentUserId(client);
+  if (role !== "author") await setUserRoleViaPg(userId, role);
+  return { client, userId };
 }
