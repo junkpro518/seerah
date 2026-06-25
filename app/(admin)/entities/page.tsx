@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ClaimRef } from "@/lib/editor/claim-ref-node";
 import { CLAIM_REF_TYPE, collectClaimRefs } from "@/lib/editor/claim-ref";
 import { saveNarrative, type NarrativeEntityType } from "@/lib/narrative/actions";
+import { suggestLinks, type Suggestion } from "@/lib/editor/smart-link";
 
 const ENTITY_TYPES: NarrativeEntityType[] = ["event", "person", "location"];
 const ENTITY_LABEL: Record<NarrativeEntityType, string> = {
@@ -22,6 +23,8 @@ export default function NarrativeEditorPage() {
   const [existing, setExisting] = useState<{ id: string; updatedAt: string } | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
   const editor = useEditor({
     extensions: [StarterKit, ClaimRef],
@@ -76,12 +79,16 @@ export default function NarrativeEditorPage() {
     await refreshColors();
   }
 
-  function insertClaimRef() {
-    if (!editor) return;
-    const claimId = window.prompt("معرّف المعلومة (claimId):")?.trim();
-    if (!claimId) return;
+  function insertClaimRef(claimId: string) {
+    if (!editor || !claimId) return;
     editor.chain().focus().insertContent({ type: CLAIM_REF_TYPE, attrs: { claimId } }).run();
     void refreshColors();
+  }
+
+  // الربط الذكي (US6): اقتراحات معلومات/مصادر قائمة عبر جلسة المستخدم (RLS) — لا service_role.
+  async function runSearch() {
+    const out = await suggestLinks(createClient(), query);
+    setSuggestions(out);
   }
 
   async function save() {
@@ -117,9 +124,38 @@ export default function NarrativeEditorPage() {
         <button onClick={loadExisting} disabled={!entityId} className="rounded border px-3 disabled:opacity-50">تحميل</button>
       </div>
 
-      <div className="flex gap-2">
-        <button onClick={insertClaimRef} className="rounded border px-3 py-1 text-sm">إدراج إشارة معلومة [n]</button>
-      </div>
+      <fieldset className="space-y-2 rounded border p-3">
+        <legend className="px-1 text-sm font-semibold">ربط ذكي — اقتراح معلومات/مصادر قائمة</legend>
+        <div className="flex gap-2">
+          <input
+            placeholder="ابحث باسم/مصطلح…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void runSearch();
+            }}
+            className="flex-1 rounded border p-2"
+          />
+          <button onClick={() => void runSearch()} className="rounded border px-3 text-sm">بحث</button>
+        </div>
+        {suggestions.length > 0 && (
+          <ul className="space-y-1">
+            {suggestions.map((s) => (
+              <li key={`${s.kind}:${s.id}`} className="flex items-center justify-between rounded border p-2 text-sm">
+                <span>
+                  <span className="font-mono text-xs text-gray-500">{s.kind === "claim" ? "معلومة" : `مصدر · ${s.status}`}</span>{" "}
+                  {s.label}
+                </span>
+                {s.kind === "claim" && (
+                  <button onClick={() => insertClaimRef(s.claimId)} className="rounded border px-2 py-0.5 text-xs">
+                    إدراج إشارة [n]
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </fieldset>
 
       <EditorContent editor={editor} />
 

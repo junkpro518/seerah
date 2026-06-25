@@ -9,6 +9,8 @@
  *  - حدّ معروف (P3): المطابقة `ilike` ساذجة لا تتجاوز التشكيل ولا تنويعات الحروف (ا/أ/إ/آ، ي/ى، ة/ه).
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type ClaimSuggestion = { kind: "claim"; id: string; claimId: string; label: string };
 export type SourceSuggestion = { kind: "source"; id: string; label: string; status: string };
 export type Suggestion = ClaimSuggestion | SourceSuggestion;
@@ -80,35 +82,27 @@ export function mapSourceRows(rows: SourceRow[]): Suggestion[] {
   }));
 }
 
-// عميل Supabase ضيّق على ما نستعمله فقط (يقبل عميل المتصفّح/الخادم بجلسة المستخدم).
-type QueryResult<T> = Promise<{ data: T[] | null; error: unknown }>;
-type Filterable<T> = {
-  select: (cols: string) => Filterable<T>;
-  is: (col: string, val: null) => Filterable<T>;
-  or: (expr: string) => Filterable<T>;
-  limit: (n: number) => QueryResult<T>;
-};
-type SuggestClient = { from: (table: string) => Filterable<unknown> };
-
 /**
- * يستعلم claim_translations + sources عبر العميل المُمرَّر (RLS) ويعيد اقتراحات مرتّبة.
- * لا يضرب القاعدة على نصّ قصير.
+ * يستعلم claim_translations + sources عبر العميل المُمرَّر (جلسة المستخدم/anon المحترِم لـ RLS)
+ * ويعيد اقتراحات مرتّبة. لا يضرب القاعدة على نصّ قصير. لا يستورد عميل admin/service_role.
  */
 export async function suggestLinks(
-  client: SuggestClient,
+  client: SupabaseClient,
   raw: string,
   limit: number = DEFAULT_LIMIT,
 ): Promise<Suggestion[]> {
   if (!isSearchable(raw)) return [];
   const pattern = toIlikePattern(raw);
 
-  const claimsP = (client.from("claim_translations") as Filterable<ClaimRow>)
+  const claimsP = client
+    .from("claim_translations")
     .select("claim_id, title, summary")
     .is("deleted_at", null)
     .or(buildOrFilter(["title", "summary"], pattern))
     .limit(limit);
 
-  const sourcesP = (client.from("sources") as Filterable<SourceRow>)
+  const sourcesP = client
+    .from("sources")
     .select("id, title, status_code")
     .is("deleted_at", null)
     .or(buildOrFilter(["title", "author"], pattern))
