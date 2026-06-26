@@ -88,3 +88,84 @@ shariah_approved → approved → published` بالأدوار. الترجمة: �
 - **ممنوع `supabase db reset` على الريموت إطلاقًا** (مبدأ صون البيانات — السحابي لا يُصفَّر).
 - الكتابة/المراجعة/الإدارة تتطلب **2FA (aal2)**.
 - لا حذف فيزيائي — الحذف ناعم (`deleted_at`).
+
+---
+
+# م١ — أداة الإدخال/المحرّر (Next.js)
+
+تطبيق **Next.js 15 (App Router) + React 19 + Tailwind v3 (RTL عربي)** يستهلك قاعدة م٠
+السحابية كما هي — **صفر تغيير على المخطط** (يفرضه حارس `tests/unit/no-m1-migrations.test.ts`).
+كل الفرض الفعلي يبقى في م٠ (RLS + المحفّزات)؛ الواجهة تعكسه ولا تستبدله.
+
+## الستاك والبنية (م١)
+
+```
+app/
+  (auth)/        # login · mfa · mfa/recovery  (مسارات عامة)
+  (admin)/       # claims · entities · sources · review · admin  (محمية: aal2 + دور)
+lib/
+  supabase/      # client (anon) · server (anon+جلسة) · admin (service_role، "server-only")
+  auth/          # assertAal2 · roles · requireAal2Staff · recovery · actions
+  data/          # optimistic (قفل تفاؤلي على updated_at)
+  claims/ review/ narrative/ sources/ editor/   # منطق + أفعال خادمية لكل قصّة
+tests/unit/  tests/integration/  tests/e2e/
+```
+
+## المتطلبات (م١)
+
+- Node **≥ 22.13** (`.nvmrc` = 22)، pnpm **11.8.0** (`corepack enable`).
+- مكدّس Supabase محلي زائل (Docker) للاختبارات — لا يمسّ السحابي.
+
+## المتغيّرات البيئية
+
+انسخ `.env.example` إلى `.env`. **حدّ أمني (SC-008):**
+
+| المتغيّر | الجانب | ملاحظة |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | عميل + خادم | عام |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | عميل + خادم | عام (كل كتابة تمرّ بـ RLS+aal2) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **خادم فقط** | **ممنوع** في المتصفّح؛ يُستورد عبر `lib/supabase/admin.ts` المحروس بـ `import "server-only"` |
+| `DATABASE_URL` | اختبار فقط | لاختبارات التكامل/الأدوار عبر pg المباشر |
+
+## التشغيل والاختبار
+
+```bash
+pnpm install            # (corepack enable أولًا)
+pnpm dev                # تطوير
+
+pnpm typecheck          # tsc صارم
+pnpm build              # بناء إنتاجي (standalone)
+pnpm test               # كل اختبارات الوحدة (Vitest)
+pnpm test:integration   # تكامل عبر pg (يحتاج DATABASE_URL؛ يتخطّى بدونه)
+pnpm test:e2e:check     # Playwright E2E ثم حكم الحالة (يحتاج مكدّسًا محليًّا + المفاتيح)
+```
+
+> **E2E يحتاج المكدّس المحلي:** `supabase db reset` ثم تصدير المفاتيح الثلاثة
+> (`NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`)
+> **في عملية خادم Next التي يشغّلها Playwright**، و `DATABASE_URL` لاختبارات الأدوار/النطاق.
+> راجع `specs/002-m1-authoring-tool/quickstart.md`.
+
+## النشر (Coolify / Contabo) — إعداد فقط
+
+`Dockerfile` (بناء standalone متعدد المراحل، مستخدم غير جذري) + `.dockerignore` جاهزان.
+
+1. في Coolify: مصدر = هذا المستودع، Build Pack = **Dockerfile**، المنفذ `3000`.
+2. متغيّرات البيئة في Coolify (وقت التشغيل): الثلاثة أعلاه — **`SUPABASE_SERVICE_ROLE_KEY`
+   سرّ خادمي، لا يُمنح بادئة `NEXT_PUBLIC_` إطلاقًا**.
+3. لا أسرار تُخبز في الصورة (التطبيق ديناميكي؛ `.env` مستثنى عبر `.dockerignore`).
+
+> **النشر الحيّ على الإنترنت إجراء خارجي ينتظر إذن المالك الصريح** — هذا الإعداد لا ينشر.
+
+## تدقيق RTL/الوصولية (T044)
+
+- الجذر: `<html lang="ar" dir="rtl">`؛ التنسيق بخصائص **منطقية/متماثلة** فقط
+  (`gap`/`p`/`space-y`) — لا `ml-/mr-/pl-/pr-/left-/right-/text-left/right` تكسر RTL.
+- كل حقول الإدخال/القوائم لها اسم وصول برمجي (`aria-label`)، لا اعتماد على `placeholder` وحده.
+- كل صفحة لها عنوان `h1`؛ الرسائل (خطأ/نجاح) نصّية مرئية.
+
+## الحدود المعروفة (م١، موثّقة)
+
+- محرّرا المعلومة/السرد يدعمان جلسة الإنشاء؛ تحرير سجلّ قائم يحتاج «تحميل» أولًا (MVP).
+- الربط الذكي: مطابقة `ilike` ساذجة لا تتجاوز التشكيل/تنويعات الحروف؛ واقتراح المصادر
+  معروض في محرّر السرد للاطّلاع (ربط المصدر الفعلي في محرّر المعلومة لاحقًا).
+- «اعتماد المصدر للمدير» و«الربط بمصدر معتمد» قواعد **تطبيقية** (لا سند DB في م٠).
