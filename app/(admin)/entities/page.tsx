@@ -117,10 +117,10 @@ export default function NarrativeEditorPage() {
       <h1 className="text-xl font-bold">المحرّر الغني — سرد الكيان</h1>
 
       <div className="flex gap-2">
-        <select value={entityType} onChange={(e) => setEntityType(e.target.value as NarrativeEntityType)} className="rounded border p-2">
+        <select aria-label="نوع الكيان" value={entityType} onChange={(e) => setEntityType(e.target.value as NarrativeEntityType)} className="rounded border p-2">
           {ENTITY_TYPES.map((t) => <option key={t} value={t}>{ENTITY_LABEL[t]}</option>)}
         </select>
-        <input placeholder="معرّف الكيان" value={entityId} onChange={(e) => setEntityId(e.target.value)} className="flex-1 rounded border p-2 font-mono" />
+        <input aria-label="معرّف الكيان" placeholder="معرّف الكيان" value={entityId} onChange={(e) => setEntityId(e.target.value)} className="flex-1 rounded border p-2 font-mono" />
         <button onClick={loadExisting} disabled={!entityId} className="rounded border px-3 disabled:opacity-50">تحميل</button>
       </div>
 
@@ -128,6 +128,7 @@ export default function NarrativeEditorPage() {
         <legend className="px-1 text-sm font-semibold">ربط ذكي — اقتراح معلومات/مصادر قائمة</legend>
         <div className="flex gap-2">
           <input
+            aria-label="بحث الربط الذكي"
             placeholder="ابحث باسم/مصطلح…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

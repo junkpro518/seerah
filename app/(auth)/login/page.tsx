@@ -26,6 +26,7 @@ export default function LoginPage() {
           name="email"
           type="email"
           required
+          aria-label="البريد الإلكتروني"
           placeholder="البريد الإلكتروني"
           className="rounded border p-2"
         />
@@ -33,6 +34,7 @@ export default function LoginPage() {
           name="password"
           type="password"
           required
+          aria-label="كلمة المرور"
           placeholder="كلمة المرور"
           className="rounded border p-2"
         />

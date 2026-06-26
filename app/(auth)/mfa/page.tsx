@@ -115,6 +115,7 @@ export default function MfaPage() {
       <input
         inputMode="numeric"
         autoComplete="one-time-code"
+        aria-label="رمز التطبيق (6 أرقام)"
         placeholder="رمز التطبيق (6 أرقام)"
         value={code}
         onChange={(e) => setCode(e.target.value)}

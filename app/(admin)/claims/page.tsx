@@ -77,6 +77,7 @@ export default function ClaimEditorPage() {
         <legend className="px-1 font-semibold">البنية</legend>
         <div className="flex gap-2">
           <select
+            aria-label="نوع الحاوية"
             value={containerType}
             onChange={(e) => setContainerType(e.target.value as ContainerType)}
             className="rounded border p-2"
@@ -86,16 +87,17 @@ export default function ClaimEditorPage() {
             ))}
           </select>
           <input
+            aria-label="معرّف الحاوية"
             placeholder="معرّف الحاوية"
             value={containerId}
             onChange={(e) => setContainerId(e.target.value)}
             className="flex-1 rounded border p-2 font-mono"
           />
         </div>
-        <select value={claimTypeCode} onChange={(e) => setClaimTypeCode(e.target.value)} className="w-full rounded border p-2">
+        <select aria-label="نوع المعلومة" value={claimTypeCode} onChange={(e) => setClaimTypeCode(e.target.value)} className="w-full rounded border p-2">
           {claimTypes.map((t) => <option key={t.code} value={t.code}>{t.code}</option>)}
         </select>
-        <select value={docGradeCode} onChange={(e) => setDocGradeCode(e.target.value)} className="w-full rounded border p-2">
+        <select aria-label="درجة التوثيق" value={docGradeCode} onChange={(e) => setDocGradeCode(e.target.value)} className="w-full rounded border p-2">
           {grades.map((g) => <option key={g.code} value={g.code}>{g.code}</option>)}
         </select>
         {gradeNeedsSource && (
@@ -125,8 +127,8 @@ export default function ClaimEditorPage() {
           {/* النصّ */}
           <fieldset className="space-y-2 rounded border p-4">
             <legend className="px-1 font-semibold">النصّ (عربي)</legend>
-            <input placeholder="العنوان" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border p-2" />
-            <textarea placeholder="الملخّص/العبارة" value={summary} onChange={(e) => setSummary(e.target.value)} className="w-full rounded border p-2" />
+            <input aria-label="عنوان المعلومة" placeholder="العنوان" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border p-2" />
+            <textarea aria-label="ملخّص/عبارة المعلومة" placeholder="الملخّص/العبارة" value={summary} onChange={(e) => setSummary(e.target.value)} className="w-full rounded border p-2" />
             <button
               onClick={async () =>
                 report(
@@ -152,8 +154,8 @@ export default function ClaimEditorPage() {
           {/* الاستشهادات */}
           <fieldset className="space-y-2 rounded border p-4">
             <legend className="px-1 font-semibold">الاستشهادات (من مصادر معتمدة فقط)</legend>
-            <input placeholder="معرّف الاستشهاد" value={citationId} onChange={(e) => setCitationId(e.target.value)} className="w-full rounded border p-2 font-mono" />
-            <select value={relationCode} onChange={(e) => setRelationCode(e.target.value)} className="w-full rounded border p-2">
+            <input aria-label="معرّف الاستشهاد" placeholder="معرّف الاستشهاد" value={citationId} onChange={(e) => setCitationId(e.target.value)} className="w-full rounded border p-2 font-mono" />
+            <select aria-label="نوع العلاقة" value={relationCode} onChange={(e) => setRelationCode(e.target.value)} className="w-full rounded border p-2">
               {relations.map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
             </select>
             <button

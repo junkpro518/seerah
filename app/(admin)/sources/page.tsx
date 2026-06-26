@@ -65,8 +65,8 @@ export default function SourcesPage() {
 
       <fieldset className="space-y-2 rounded border p-4">
         <legend className="px-1 font-semibold">اقتراح مصدر</legend>
-        <input placeholder="العنوان" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border p-2" />
-        <select value={sourceTypeCode} onChange={(e) => setSourceTypeCode(e.target.value)} className="w-full rounded border p-2">
+        <input aria-label="عنوان المصدر" placeholder="العنوان" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border p-2" />
+        <select aria-label="نوع المصدر" value={sourceTypeCode} onChange={(e) => setSourceTypeCode(e.target.value)} className="w-full rounded border p-2">
           {types.map((t) => <option key={t.code} value={t.code}>{t.code}</option>)}
         </select>
         <button

@@ -21,6 +21,7 @@ export default function RecoveryPage() {
     <Center>
       <h1 className="mb-4 text-lg font-bold">استعادة الدخول برمز احتياطي</h1>
       <input
+        aria-label="الرمز الاحتياطي"
         placeholder="الرمز الاحتياطي"
         value={code}
         onChange={(e) => setCode(e.target.value)}

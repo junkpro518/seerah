@@ -55,10 +55,10 @@ export default function ReviewPage() {
       <p className="text-sm text-gray-600">دورك: {role ?? "—"}</p>
 
       <div className="flex gap-2">
-        <select value={table} onChange={(e) => setTable(e.target.value)} className="rounded border p-2">
+        <select aria-label="الجدول" value={table} onChange={(e) => setTable(e.target.value)} className="rounded border p-2">
           {TABLES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input placeholder="معرّف السجل" value={id} onChange={(e) => setId(e.target.value)} className="flex-1 rounded border p-2 font-mono" />
+        <input aria-label="معرّف السجل" placeholder="معرّف السجل" value={id} onChange={(e) => setId(e.target.value)} className="flex-1 rounded border p-2 font-mono" />
         <button onClick={load} disabled={!id} className="rounded border px-3 disabled:opacity-50">تحميل</button>
       </div>
 

@@ -15,6 +15,7 @@ export default function AdminPage() {
         لعضو فقد جهازه ورموزه الاحتياطية: يُحذف عامل المصادقة فيُعيد التسجيل.
       </p>
       <input
+        aria-label="معرّف المستخدم (user id)"
         placeholder="معرّف المستخدم (user id)"
         value={userId}
         onChange={(e) => setUserId(e.target.value)}
