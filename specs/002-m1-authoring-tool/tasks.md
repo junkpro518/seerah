@@ -115,12 +115,12 @@
 
 ## Phase 9: Polish & Cross-cutting
 
-- [ ] T042 [P] أمان: تأكيد آلي أن حزمة العميل خالية من service role + تغطية رفض الكتابة بـ aal1 (SC-008/SC-001) في `tests/e2e/security.spec.ts`
-- [ ] T043 [P] **حارس SC-009:** تأكيد أن م١ لم يضف/يعدّل أي ملف تحت `supabase/migrations/` (صفر تغيير مخطط) — فحص في CI/سكربت
-- [ ] T044 [P] تدقيق RTL/وصولية على شاشات الإدارة (عربي، خصائص منطقية)
-- [ ] T045 تشغيل كامل الوحدة + E2E (كل المسارات الحرجة خضراء) حسب quickstart.md
-- [ ] T046 [P] إعداد النشر على VPS (Contabo) عبر Coolify/Dokploy (Dockerfile/build) + ربط البيئة (service role خادم فقط)
-- [ ] T047 [P] تحديث README بأوامر تشغيل/اختبار/نشر م١
+- [x] T042 [P] أمان: تأكيد آلي أن حزمة العميل خالية من service role + تغطية رفض الكتابة بـ aal1 (SC-008/SC-001) في `tests/e2e/security.spec.ts`
+- [x] T043 [P] **حارس SC-009:** تأكيد أن م١ لم يضف/يعدّل أي ملف تحت `supabase/migrations/` (صفر تغيير مخطط) — فحص في CI/سكربت
+- [x] T044 [P] تدقيق RTL/وصولية على شاشات الإدارة (عربي، خصائص منطقية)
+- [x] T045 تشغيل كامل الوحدة + E2E (كل المسارات الحرجة خضراء) حسب quickstart.md
+- [x] T046 [P] إعداد النشر على VPS (Contabo) عبر Coolify/Dokploy (Dockerfile/build) + ربط البيئة (service role خادم فقط)
+- [x] T047 [P] تحديث README بأوامر تشغيل/اختبار/نشر م١
 
 ---
 
