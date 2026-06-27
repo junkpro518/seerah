@@ -142,6 +142,15 @@ Tool-specific instructions may differ when necessary.
 
 When changing one file, review the other file and update any shared rules so both agents follow the same project standards.
 
+## 9. تنبيه المالك بالتغييرات المهمّة (ومزامنة وثيقة المشروع)
+
+عند أي تغيير مهمّ في المشروع (معلم، اكتمال مرحلة/طور، تغيير سلوك أو بنية، قرار مؤثّر، نشر محتوى):
+
+1. **أبلِغ المالك صراحةً وبوضوح** بالتغيير، بلغة بسيطة بلا مصطلحات تقنية (الجمهور النهائي للوثيقة: المالك والإداريون وأعضاء المجلس).
+2. المالك/المستشار يتولّى عكس ذلك في وثيقة المشروع على Notion (https://app.notion.com/p/38739125abb18062b36ec44c4b1d112a — مرجع للقراءة فقط). **لا يكتب الوكيل على Notion إطلاقًا.**
+
+(التغييرات التافهة — إملاء/تنسيق — لا تستلزم تنبيهًا.)
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
@@ -149,6 +158,7 @@ When changing one file, review the other file and update any shared rules so bot
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/001-m0-database-core/plan.md` (+ research.md, data-model.md, quickstart.md,
-contracts/state-machine.md). Decision source: docs/CONCEPT.md, docs/GAPS.md.
+`specs/002-m1-authoring-tool/plan.md` (+ research.md, data-model.md, quickstart.md,
+contracts/operations.md). M0 (complete): `specs/001-m0-database-core/`.
+Decision source: docs/CONCEPT.md, docs/GAPS.md.
 <!-- SPECKIT END -->
